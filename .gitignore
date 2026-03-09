@@ -1,0 +1,29 @@
+# RStudio files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# renv
+renv/library/
+renv/staging/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# temporary files
+*.log
+*.tmp
+
+# data files (optional depending on workflow)
+data/
+*.tsv
+*.csv
+*.rds
+*.parquet
+
+# credentials
+*.key
+*.pem
+*.env
