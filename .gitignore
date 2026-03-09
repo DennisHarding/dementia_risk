@@ -16,7 +16,7 @@ Thumbs.db
 *.log
 *.tmp
 
-# data files (optional depending on workflow)
+# data files
 data/
 *.tsv
 *.csv

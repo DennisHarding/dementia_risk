@@ -48,7 +48,6 @@ p <- forestplot(df = hr_table,
            se = se,
            pvalue = pvalue,
            psignif = 0.05,
-           ci
            xlab= "Hazard Ratio (95% CI)",
            title = "Cox Regression Results",
            ref_line = 1
