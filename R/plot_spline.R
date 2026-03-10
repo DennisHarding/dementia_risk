@@ -1,5 +1,7 @@
 plot_spline <- function(demtype, fit, data, pred_df, var_name) {
   
+  var_name = as.character(var_name)
+  
   # Predict
   pred <- predict(fit, newdata = pred_df, type = "lp", se.fit = TRUE)
   
