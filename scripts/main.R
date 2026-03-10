@@ -5,16 +5,35 @@ install.packages(
   type = "source"
 )
 install.packages("survminer")
-
+library(tidyverse)
+library(data.table)
 library(survival)
 library(survminer)
-library(tibble)
-library(dplyr)
-library(purrr)
+library(ggforestplot)
+library(glue)
 
 # Required scripts and functions
-source("scripts/formatting.R")
+source("R/formatting.R")
 source("R/plot_spline.R")
+source("R/plot_forest.R")
+
+#> -----------------------------
+#> DATA FORMATTING
+#> -----------------------------
+
+data <- fread("data/custom_data_1.tsv")
+
+df <- format_df(data)
+
+df_ad <- format_df_ad(df)
+df_vd <- format_df_vd(df)
+df_nonad <- format_df_nonad(df)
+#df_ad <- format_df_alldem()
+
+
+#> -----------------------------
+#> Prepare analysis table
+#> -----------------------------
 
 # Reference variables and data frames > analysis table
 types_list <- list(
@@ -34,7 +53,10 @@ analysis_tbl <- tibble(
   data = data_list
 )
 
-# COX MODELS
+
+#> -----------------------------
+#> DEFINE & FIT COX MODELS
+#> -----------------------------
 analysis_tbl <- analysis_tbl %>% 
   mutate(
     cox_fit = map(data, ~ coxph(
@@ -43,13 +65,18 @@ analysis_tbl <- analysis_tbl %>%
         sex + 
         edu +
         gene_apoe +
-        smok_ever 
+        smok_ever +
+        hf
       ,
       data = .x
     ))
   )
 
-# Reference prediction data
+#> -----------------------------
+#> SPLINES
+#> -----------------------------
+
+# Generate reference prediction data
 analysis_tbl <- analysis_tbl %>% 
   mutate(
     pred_df = map(data, ~ tibble(
@@ -60,6 +87,7 @@ analysis_tbl <- analysis_tbl %>%
       edu = 0,
       gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
       smok_ever = 0,
+      hf = 0
     ))
   )
 
@@ -70,7 +98,14 @@ analysis_tbl <- analysis_tbl %>%
                ~ plot_spline(..1, ..2, ..3, ..4, var_name = "age_baseline"))
   )
 
-# Schoenfeld residual tests (proportional hazards tests)
+# PRINT SPLINE PLOTS
+analysis_tbl %>% pull(spline_plot) %>% walk(print)
+
+#> -----------------------------
+#> Proportional Hazards tests (Schoenfeld residuals)
+#> -----------------------------
+
+# Tests
 analysis_tbl <- analysis_tbl %>%
   mutate(
     ph_test = map(cox_fit, ~
@@ -78,16 +113,27 @@ analysis_tbl <- analysis_tbl %>%
     )
   )
 
-# Plotting Schoenfeld residuals
+# Plots
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    ph_plot = map(ph_test, ~
-      ggcoxzph(.x, ggtheme = theme_bw())
-    )
+    ph_plot = pmap(list(type, ph_test), ~{
+      caption = glue("PH Test For  {..1}")
+      ggcoxzph(caption = caption, fit = ..2, ggtheme = theme_bw())
+    })
   )
-
-# PRINT SPLINE PLOTS
-analysis_tbl %>% pull(spline_plot) %>% walk(print)
 
 # PRINT PH PLOTS
 analysis_tbl %>% pull(ph_plot) %>% walk(print)
+
+#> -----------------------------
+#> Forest plots
+#> -----------------------------
+analysis_tbl <- analysis_tbl %>%
+  mutate(
+    forest_plot = pmap(list(type, cox_fit), ~
+      plot_forest(..1, ..2))
+  )
+
+# PRINT FOREST PLOTS
+analysis_tbl %>% pull(forest_plot) %>% walk(print)
+
