@@ -43,6 +43,10 @@ analysis_tbl <- tibble(
   data = data_list
 )
 
+
+#> prs:gene_apoe34 significant interaction for VD
+#> 
+
 #> -----------------------------
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
@@ -54,7 +58,7 @@ analysis_tbl <- analysis_tbl %>%
         sex + 
         edu +
         smok_ever +
-        prs +
+        prs *
         gene_apoe +
         ht
       ,
