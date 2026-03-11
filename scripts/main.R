@@ -1,10 +1,3 @@
-install.packages("survival")
-install.packages(
-  "https://cran.r-project.org/src/contrib/Archive/ggrepel/ggrepel_0.9.6.tar.gz",
-  repos = NULL,
-  type = "source"
-)
-install.packages("survminer")
 library(tidyverse)
 library(data.table)
 library(survival)
@@ -28,14 +21,11 @@ df <- format_df(data)
 df_ad <- format_df_ad(df)
 df_vd <- format_df_vd(df)
 df_nonad <- format_df_nonad(df)
-#df_ad <- format_df_alldem()
-
+#df_alldem <- format_df_alldem()
 
 #> -----------------------------
 #> Prepare analysis table
 #> -----------------------------
-
-# Reference variables and data frames > analysis table
 types_list <- list(
   AD = "AD",
   VD = "VD",
@@ -53,7 +43,6 @@ analysis_tbl <- tibble(
   data = data_list
 )
 
-
 #> -----------------------------
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
@@ -61,16 +50,75 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     cox_fit = map(data, ~ coxph(
       Surv(futime, fail_bin) ~ 
-        age_baseline +
+        I(age_baseline^2) +
         sex + 
         edu +
-        gene_apoe +
         smok_ever +
-        hf
+        prs +
+        gene_apoe +
+        ht
       ,
       data = .x
     ))
   )
+
+# Optional: define candidate cox model:
+
+analysis_tbl <- analysis_tbl %>% 
+  mutate(
+    cox_fit_new = map(data, ~ coxph(
+      Surv(futime, fail_bin) ~ 
+        I(age_baseline^2) +
+        sex + 
+        edu +
+        smok_ever +
+        prs +
+        gene_apoe +
+        ht
+      ,
+      data = .x
+    ))
+  )
+
+
+# Print summary of cox models
+
+analysis_tbl %>% 
+  mutate(cox_summary = map(cox_fit, summary)) %>% 
+  pull(cox_summary) %>% 
+  walk(print)
+
+analysis_tbl %>% 
+  mutate(cox_summary_new = map(cox_fit_new, summary)) %>% 
+  pull(cox_summary_new) %>% 
+  walk(print)
+
+#> -----------------------------
+#> Anova test
+#> -----------------------------
+analysis_tbl <- analysis_tbl %>%
+  mutate(
+    anova_test = pmap(list(cox_fit, cox_fit_new), ~ 
+      anova(..1,..2)
+    )
+  )
+
+# Print anova tests
+analysis_tbl %>% pull(anova_test) %>% walk(print)
+
+#> -----------------------------
+#> AIC test
+#> -----------------------------
+analysis_tbl <- analysis_tbl %>%
+  mutate(
+    AIC_test = pmap(list(cox_fit, cox_fit_new), ~ 
+      AIC(..1,..2)
+    )
+  )
+
+# Print AIC tests
+analysis_tbl %>% pull(AIC_test) %>% walk(print)
+
 
 #> -----------------------------
 #> SPLINES
@@ -80,14 +128,15 @@ analysis_tbl <- analysis_tbl %>%
 analysis_tbl <- analysis_tbl %>% 
   mutate(
     pred_df = map(data, ~ tibble(
-      age_baseline = seq(min(.x$age_baseline, na.rm = TRUE), 
-                         max(.x$age_baseline, na.rm = TRUE),
-                         length.out = 200),
+      age_baseline = mean(.x$age_baseline, na.rm = TRUE),
       sex = 0,
       edu = 0,
       gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
       smok_ever = 0,
-      hf = 0
+      prs = seq(min(.x$prs, na.rm = TRUE),
+                max(.x$prs, na.rm = TRUE),
+                length.out = 200),
+      ht = 0
     ))
   )
 
@@ -95,7 +144,7 @@ analysis_tbl <- analysis_tbl %>%
 analysis_tbl <- analysis_tbl %>%
   mutate(
     spline_plot = pmap(list(type, cox_fit, data, pred_df),
-               ~ plot_spline(..1, ..2, ..3, ..4, var_name = "age_baseline"))
+               ~ plot_spline(..1, ..2, ..3, ..4, var_name = "prs"))
   )
 
 # PRINT SPLINE PLOTS
