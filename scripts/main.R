@@ -47,35 +47,24 @@ analysis_tbl <- tibble(
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
 
-#> I want to be able to compare cox models with different variables,
-#> issue is that different variables have differnet missing values
-#> and i dont want to simply remove all observations which have missing
-#> values,
-#> 
-#> instead i want to remove only the values which are in the columns 
-#> which are different between the two cox models. So i could make a 
-#> simple row of code in which the user can take the data stored in 
-#> analysis_tbl and filter the datasets to only keep obsevations which
-#> are not na in the differing variabble.
-
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    data = map(data, ~ filter(.x, !is.na(hf))
+    data = map(data, ~ filter(.x, !is.na(ht),
+                              !is.na(hf),
+                              !is.na(stroke))
     )
   )
-analysis_tbl
+
 analysis_tbl <- analysis_tbl %>% 
   mutate(
     cox_fit = map(data, ~ coxph(
       Surv(futime, fail_bin) ~ 
         I(age_baseline^2) +
         sex + 
-        edu +
+        prs *
+        edu_cont +
         smok_ever +
-        prs +
-        gene_apoe +
-        ht +
-        hf
+        gene_apoe
       ,
       data = .x
     ))
@@ -89,19 +78,16 @@ analysis_tbl <- analysis_tbl %>%
       Surv(futime, fail_bin) ~ 
         I(age_baseline^2) +
         sex + 
-        edu +
-        smok_ever +
         prs +
-        gene_apoe +
-        ht
+        edu_cont +
+        smok_ever +
+        gene_apoe
       ,
       data = .x
     ))
   )
 
-
 # Print summary of cox models
-
 analysis_tbl %>% 
   mutate(cox_summary = map(cox_fit, summary)) %>% 
   pull(cox_summary) %>% 
@@ -159,7 +145,9 @@ analysis_tbl <- analysis_tbl %>%
                 max(.x$age_baseline, na.rm = TRUE),
                 length.out = 200),
       ht = 0,
-      hf = 0
+      hf = 0,
+      stroke = 0,
+      edu_cont = mean(.x$edu_cont, na.rm = TRUE)
     ))
   )
 
@@ -171,19 +159,21 @@ analysis_tbl <- analysis_tbl %>%
                              var_name = "age_baseline"))
   )
 
+# PRINT SPLINE PLOTS
+analysis_tbl %>% pull(spline_plot) %>% walk(print)
+
 # Produce spline plots WITH COMPARISON
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    spline_plot = pmap(list(type, cox_fit, data, pred_df, cox_fit_new),
+    spline_plot_vs = pmap(list(type, cox_fit, data, pred_df, cox_fit_new),
                ~ plot_spline(..1, ..2, ..3, ..4, ..5, 
                              var_name = "age_baseline"))
   )
 
-# PRINT SPLINE PLOTS
-analysis_tbl %>% pull(spline_plot) %>% walk(print)
 
+# Produce spline plots
+analysis_tbl %>% pull(spline_plot_vs) %>% walk(print)
 
-analysis_tbl
 #> -----------------------------
 #> Proportional Hazards tests (Schoenfeld residuals)
 #> -----------------------------
@@ -191,7 +181,7 @@ analysis_tbl
 # Tests
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    ph_test = map(cox_fit, ~
+    ph_test_new = map(cox_fit_new, ~
       cox.zph(.x)
     )
   )
@@ -199,7 +189,7 @@ analysis_tbl <- analysis_tbl %>%
 # Plots
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    ph_plot = pmap(list(type, ph_test), ~{
+    ph_plot = pmap(list(type, ph_test_new), ~{
       caption = glue("PH Test For  {..1}")
       ggcoxzph(caption = caption, fit = ..2, ggtheme = theme_bw())
     })
