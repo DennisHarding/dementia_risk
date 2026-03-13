@@ -11,7 +11,7 @@ format_df <- function(data = data){
     rename(
       ad_hes = ad_hes_df,
       vd_hes = vd_hes_df,
-      nonad_hes = nonad_hes_df,   # vascular-related dementia
+      vrd_hes = nonad_hes_df,   # vascular-related dementia
       prs = phylo_score
     ) %>%
     mutate(
@@ -19,25 +19,25 @@ format_df <- function(data = data){
       # Define exit dates (earliest of event, death, or censoring)
       exit_date_ad = pmin(death_date, ad_hes, censor_date_new, na.rm=TRUE),
       exit_date_vd = pmin(death_date, vd_hes, censor_date_new, na.rm=TRUE),
-      exit_date_nonad = pmin(death_date, nonad_hes, censor_date_new, na.rm=TRUE),
-      exit_date_alldem = pmin(death_date, ad_hes, vd_hes, nonad_hes, censor_date_new, na.rm=TRUE),
+      exit_date_vrd = pmin(death_date, vrd_hes, censor_date_new, na.rm=TRUE),
+      exit_date_alldem = pmin(death_date, ad_hes, vd_hes, vrd_hes, censor_date_new, na.rm=TRUE),
       
       # Follow-up time (years)
       futime_ad = as.numeric(difftime(exit_date_ad, entry_date, unit = "days")) / 365.25,
       futime_vd = as.numeric(difftime(exit_date_vd, entry_date, unit = "days")) / 365.25,
-      futime_nonad = as.numeric(difftime(exit_date_nonad, entry_date, unit = "days")) / 365.25,
+      futime_vrd = as.numeric(difftime(exit_date_vrd, entry_date, unit = "days")) / 365.25,
       futime_alldem = as.numeric(difftime(exit_date_alldem, entry_date, unit = "days")) / 365.25,
       
       # Age at event
       age_ad = age_baseline + as.numeric(difftime(ad_hes, entry_date, unit = "days")) / 365.25,
       age_vd = age_baseline + as.numeric(difftime(vd_hes, entry_date, unit = "days")) / 365.25, 
-      age_nonad = age_baseline + as.numeric(difftime(nonad_hes, entry_date, unit = "days")) / 365.25, 
+      age_vrd = age_baseline + as.numeric(difftime(vrd_hes, entry_date, unit = "days")) / 365.25, 
       
       # Event indicators
       ad_bin = as.numeric(!is.na(ad_hes)),
       vd_bin = as.numeric(!is.na(vd_hes)),
-      nonad_bin = as.numeric(!is.na(nonad_hes)),
-      alldem_bin = as.numeric(!is.na(coalesce(age_ad, age_vd, age_nonad))),
+      vrd_bin = as.numeric(!is.na(vrd_hes)),
+      alldem_bin = as.numeric(!is.na(coalesce(age_ad, age_vd, age_vrd))),
       
       # Education variables
       edu = case_when(
@@ -73,22 +73,22 @@ format_df <- function(data = data){
       stroke = case_when(
         stroke_first <= entry_date ~ 1,
         stroke_first > entry_date ~ 0,
-        .default = NA_real_
+        .default = 0
       ),
       ht = case_when(
         ht_hes_df <= entry_date ~ 1,
         ht_hes_df > entry_date ~ 0,
-        .default = NA_real_
+        .default = 0
       ),
       hf = case_when(
         hf_hes_df <= entry_date ~ 1,
         hf_hes_df > entry_date ~ 0,
-        .default = NA_real_
+        .default = 0
       ),
       alldm = case_when(
         alldm_hes_df <= entry_date ~ 1,
         alldm_hes_df > entry_date ~ 0,
-        .default = NA_real_
+        .default = 0
       ),
       
       # Derived lipid measure
@@ -139,13 +139,13 @@ format_df_vd <- function(df = df){
 }
 
 # Vascular-Related Dementia
-format_df_nonad <- function(df = df){
+format_df_vrd <- function(df = df){
   df %>%
     mutate(
-      exit_date = exit_date_nonad,
-      futime = futime_nonad,
-      fail_bin = nonad_bin,
-      fail_age = age_nonad
+      exit_date = exit_date_vrd,
+      futime = futime_vrd,
+      fail_bin = vrd_bin,
+      fail_age = age_vrd
     ) %>%
     filter(
       futime > 0

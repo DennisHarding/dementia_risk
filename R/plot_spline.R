@@ -1,4 +1,4 @@
-plot_spline <- function(demtype, fit, data, pred_df, var_name) {
+plot_spline <- function(demtype, fit, data, pred_df, fit_new = NULL, var_name) {
   
   var_name = as.character(var_name)
   
@@ -9,6 +9,14 @@ plot_spline <- function(demtype, fit, data, pred_df, var_name) {
   pred_df$lower <- exp(pred$fit - 1.96 * pred$se.fit - mean(pred$fit))
   pred_df$upper <- exp(pred$fit + 1.96 * pred$se.fit - mean(pred$fit))
   
+  # Predict new
+  if (!is.null(fit_new)){
+    pred_new <- predict(fit_new, newdata = pred_df, type = "lp", se.fit = TRUE)
+    
+    pred_df$hr_new <- exp(pred_new$fit - mean(pred_new$fit))
+    pred_df$lower_new <- exp(pred_new$fit - 1.96 * pred_new$se.fit - mean(pred_new$fit))
+    pred_df$upper_new <- exp(pred_new$fit + 1.96 * pred_new$se.fit - mean(pred_new$fit))
+  }
   # Density of chosen variable
   dens <- density(data[[var_name]], na.rm = TRUE)
   dens_df <- data.frame(x = dens$x, y = dens$y)
@@ -18,7 +26,7 @@ plot_spline <- function(demtype, fit, data, pred_df, var_name) {
   dens_df$y_scaled <- hr_range[1] + dens_scale * dens_df$y
 
   # Plot
-  ggplot() +
+  p <- ggplot() +
     geom_line(data = pred_df, aes(x = .data[[var_name]], y = hr)) +
     geom_ribbon(data = pred_df,
                 aes(x = .data[[var_name]], ymin = lower, ymax = upper),
@@ -34,4 +42,15 @@ plot_spline <- function(demtype, fit, data, pred_df, var_name) {
          y = "Hazard Ratio",
          title = paste("HR as a function of", var_name,"for", demtype)) +
     theme_minimal()
+  
+  if (!is.null(fit_new)){
+    p <- p + 
+      geom_line(data = pred_df, 
+        aes(x = .data[[var_name]], y = hr_new),
+        colour = "red") +
+      geom_ribbon(data = pred_df,
+        aes(x = .data[[var_name]], ymin = lower_new, ymax = upper_new),
+        alpha = 0.2, fill = "red")
+  }
+  p
 }
