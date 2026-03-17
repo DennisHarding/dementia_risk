@@ -61,10 +61,12 @@ analysis_tbl <- analysis_tbl %>%
       Surv(futime, fail_bin) ~ 
         I(age_baseline^2) +
         sex + 
-        prs *
+        prs +
         edu_cont +
         smok_ever +
-        gene_apoe
+        alc +
+        gene_apoe 
+        
       ,
       data = .x
     ))
@@ -141,13 +143,13 @@ analysis_tbl <- analysis_tbl %>%
       edu = 0,
       gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
       smok_ever = 0,
-      age_baseline = seq(min(.x$age_baseline, na.rm = TRUE),
-                max(.x$age_baseline, na.rm = TRUE),
-                length.out = 200),
+      edu_cont = mean(.x$edu_cont, na.rm = TRUE),
       ht = 0,
       hf = 0,
       stroke = 0,
-      edu_cont = mean(.x$edu_cont, na.rm = TRUE)
+      age_baseline = seq(min(.x$age_baseline, na.rm = TRUE),
+                     max(.x$age_baseline, na.rm = TRUE),
+                     length.out = 200)
     ))
   )
 
@@ -175,28 +177,43 @@ analysis_tbl <- analysis_tbl %>%
 analysis_tbl %>% pull(spline_plot_vs) %>% walk(print)
 
 #> -----------------------------
-#> Proportional Hazards tests (Schoenfeld residuals)
+#> Proportional Hazards tests - Schoenfeld residuals
 #> -----------------------------
-
 # Tests
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    ph_test_new = map(cox_fit_new, ~
+    ph_test = map(cox_fit, ~
       cox.zph(.x)
     )
   )
 
+source("R/plot_sfr.R")
+
 # Plots
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    ph_plot = pmap(list(type, ph_test_new), ~{
-      caption = glue("PH Test For  {..1}")
-      ggcoxzph(caption = caption, fit = ..2, ggtheme = theme_bw())
-    })
+    ph_plot = pmap(list(type, ph_test), ~ 
+      plot_sfr(..1, ..2, save = TRUE))
   )
 
 # PRINT PH PLOTS
 analysis_tbl %>% pull(ph_plot) %>% walk(print)
+
+#> -----------------------------
+#> Proportional Hazards tests - Log-Log plots
+#> -----------------------------
+source("R/plot_loglog.R")
+
+analysis_tbl <- analysis_tbl %>%
+  mutate(surv_curvs = pmap(list(type, data), ~ {
+    
+    # SPECIFY vars of interest -->
+    vars = c("sex")
+    
+    plot_loglog(..1, ..2, vars, save = TRUE)
+  }))
+
+analysis_tbl %>% pull(surv_curvs) %>% walk(print)
 
 #> -----------------------------
 #> Forest plots
@@ -213,29 +230,31 @@ analysis_tbl <- analysis_tbl %>%
 # PRINT FOREST PLOTS
 analysis_tbl %>% pull(forest_plot) %>% walk(print)
 
+
+
 #> -----------------------------
 #> Generate Summary Table
 #> -----------------------------
 
 library(gtsummary)
 
-#select variables to include in summary table
-vars <- c("age_baseline",
-          "sex",
-          "edu_yrs",
-          "gene_apoe",
-          "alldem_bin",
-          "prs",
-          "ad_bin",
-          "vd_bin",
-          "vrd_bin",
-          "alldm"
-)
-
+#remember to select variables to include in summary table
 
 summary_table <- 
   df %>%
-  select(all_of(vars)) %>%
+  select(
+    "age_baseline",
+    "sex",
+    "edu_cont",
+    "edu",
+    "gene_apoe",
+    "alldem_bin",
+    "ad_bin",
+    "vd_bin",
+    "vrd_bin",
+    "prs",
+    "alldm"
+  ) %>%
   mutate(
     sex = factor(sex,
                  levels = c(0, 1),
@@ -249,5 +268,7 @@ summary_table <-
     ),
     missing = "ifany"
   )
+
+
 
 summary_table

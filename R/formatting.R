@@ -93,7 +93,11 @@ format_df <- function(data = data){
       
       # Derived lipid measure
       non_hdl = chol - hdl,
-      
+      non_hdl_bin = case_when(
+        non_hdl > median(non_hdl) ~ 1,
+        non_hdl <= median(non_hdl) ~ 0,
+        .default = NA_real_
+      ),
       # Set APOE reference genotype
       gene_apoe = relevel(as.factor(gene_apoe), ref = "e33")
     ) %>%
