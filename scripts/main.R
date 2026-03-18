@@ -50,7 +50,8 @@ analysis_tbl <- tibble(
 analysis_tbl <- analysis_tbl %>%
   mutate(
     data = map(data, ~ filter(.x, !is.na(sbp),
-                              !is.na(dbp),)
+                              !is.na(dbp),
+                              !is.na(ht))
     )
   )
 
@@ -58,15 +59,14 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     cox_fit = map(data, ~ coxph(
       Surv(futime, fail_bin) ~ 
-        I(age_baseline^2) +
+        age_baseline +
         sex + 
         prs +
         gene_apoe +
         edu_cont +
         smok_ever +
         alc +
-        dbp +
-        sbp
+        ht
       ,
       data = .x
     ))
@@ -84,7 +84,9 @@ analysis_tbl <- analysis_tbl %>%
         gene_apoe +
         edu_cont +
         smok_ever +
-        alc
+        alc +
+        ht
+
       ,
       data = .x
     ))
@@ -92,8 +94,11 @@ analysis_tbl <- analysis_tbl %>%
 
 # Print summary of cox models
 analysis_tbl %>% 
-  mutate(cox_summary = map(cox_fit, summary)) %>% 
-  pull(cox_summary) %>% 
+  mutate(cox_summary = map(cox_fit, summary),
+         hr = map(cox_summary, ~ .x$coefficients[, c("exp(coef)")]),
+         concordance = map(cox_summary, ~ .x$concordance[1])
+           ) %>% 
+  pull(hr, concordance) %>% 
   walk(print)
 
 analysis_tbl %>% 
@@ -148,9 +153,9 @@ analysis_tbl <- analysis_tbl %>%
       edu_cont = mean(.x$edu_cont, na.rm = TRUE),
       stroke = 0,
       age_baseline = mean(.x$age_baseline, na.rm = TRUE),
-      sbp = 0,
-      dbp = seq(min(.x$dbp, na.rm = TRUE),
-                max(.x$dbp, na.rm = TRUE),
+      dbp = 0,
+      sbp = seq(min(.x$sbp, na.rm = TRUE),
+                max(.x$sbp, na.rm = TRUE),
                 length.out = 200)
     ))
   )
@@ -160,7 +165,7 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     spline_plot = pmap(list(type, cox_fit, data, pred_df),
                ~ plot_spline(..1, ..2, ..3, ..4, 
-                             var = "dbp",
+                             var = "sbp",
                              save = TRUE))
   )
 
