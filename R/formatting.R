@@ -70,9 +70,23 @@ format_df <- function(data = data){
       stroke_first = pmin(giga_stroke_hes_df, giga_ih_hes_df, is_hes_df, na.rm=TRUE),
       
       # Baseline disease indicators (present before entry)
-      stroke = case_when(
+      allstroke = case_when(
         stroke_first <= entry_date ~ 1,
         stroke_first > entry_date ~ 0,
+        .default = 0
+      ),
+      is = case_when(
+        is_hes_df <= entry_date ~ 1,
+        is_hes_df > entry_date ~ 0,
+        .default = 0
+      ),
+      ih = case_when(
+        giga_ih_hes_df <= entry_date ~ 1,
+        giga_ih_hes_df > entry_date ~ 0,
+        .default = 0
+      ),
+      is_ih = case_when(
+        is_hes_df <= entry_date | giga_ih_hes_df <= entry_date ~ 1,
         .default = 0
       ),
       ht = case_when(
@@ -83,6 +97,11 @@ format_df <- function(data = data){
       hf = case_when(
         hf_hes_df <= entry_date ~ 1,
         hf_hes_df > entry_date ~ 0,
+        .default = 0
+      ),
+      ihd = case_when(
+        ihd_hes_df <= entry_date ~ 1,
+        ihd_hes_df > entry_date ~ 0,
         .default = 0
       ),
       alldm = case_when(

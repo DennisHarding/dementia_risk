@@ -38,6 +38,7 @@ df <- ukb_data %>%
          is_hes_df,
          giga_stroke_hes_df,
          hf_hes_df,
+         ihd_hes_df,
          ht_hes_df,
          wmh_total_i2,
          wmh_total_i3,
@@ -57,4 +58,4 @@ df <- ukb_data %>%
   left_join(extended_data_sel %>% select(ID, phylo_score), by = "ID"
   ) 
 
-write_tsv(df, "custom_data.tsv")
+write_tsv(df, "custom_data_X.tsv")

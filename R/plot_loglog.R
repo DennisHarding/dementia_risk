@@ -21,7 +21,7 @@ plot_loglog <- function(type, data, vars, save = FALSE){
                ggtheme = theme_minimal(),
                xlim = c(min_fit, max_fit),
                censor = FALSE,
-               size = 0.5
+               linewidth = 0.5
               )
     
     if (save == TRUE){

@@ -1,6 +1,6 @@
-plot_spline <- function(demtype, fit, data, pred_df, fit_new = NULL, var_name) {
+plot_spline <- function(type, fit, data, pred_df, fit_new = NULL, var, save = FALSE) {
   
-  var_name = as.character(var_name)
+  var = as.character(var)
   
   # Predict
   pred <- predict(fit, newdata = pred_df, type = "lp", se.fit = TRUE)
@@ -18,7 +18,7 @@ plot_spline <- function(demtype, fit, data, pred_df, fit_new = NULL, var_name) {
     pred_df$upper_new <- exp(pred_new$fit + 1.96 * pred_new$se.fit - mean(pred_new$fit))
   }
   # Density of chosen variable
-  dens <- density(data[[var_name]], na.rm = TRUE)
+  dens <- density(data[[var]], na.rm = TRUE)
   dens_df <- data.frame(x = dens$x, y = dens$y)
   
   hr_range <- range(pred_df$lower, pred_df$upper)
@@ -27,9 +27,9 @@ plot_spline <- function(demtype, fit, data, pred_df, fit_new = NULL, var_name) {
 
   # Plot
   p <- ggplot() +
-    geom_line(data = pred_df, aes(x = .data[[var_name]], y = hr)) +
+    geom_line(data = pred_df, aes(x = .data[[var]], y = hr)) +
     geom_ribbon(data = pred_df,
-                aes(x = .data[[var_name]], ymin = lower, ymax = upper),
+                aes(x = .data[[var]], ymin = lower, ymax = upper),
                 alpha = 0.2) +
     geom_hline(yintercept = 1, linetype = "dashed") +
     geom_line(data = dens_df,
@@ -38,19 +38,36 @@ plot_spline <- function(demtype, fit, data, pred_df, fit_new = NULL, var_name) {
     geom_ribbon(data = dens_df,
                 aes(x = x, ymin = hr_range[1], ymax = y_scaled),
                 fill = "steelblue", alpha = 0.3) +
-    labs(x = var_name,
+    labs(x = var,
          y = "Hazard Ratio",
-         title = paste("HR as a function of", var_name,"for", demtype)) +
+         title = paste("HR as a function of", var, "for", type)) +
     theme_minimal()
   
   if (!is.null(fit_new)){
     p <- p + 
       geom_line(data = pred_df, 
-        aes(x = .data[[var_name]], y = hr_new),
+        aes(x = .data[[var]], y = hr_new),
         colour = "red") +
       geom_ribbon(data = pred_df,
-        aes(x = .data[[var_name]], ymin = lower_new, ymax = upper_new),
+        aes(x = .data[[var]], ymin = lower_new, ymax = upper_new),
         alpha = 0.2, fill = "red")
   }
+  
+  if (save == TRUE){
+    
+    filename = glue("splineplot_{type}_{var}.png")
+    path = "figures/splineplot/"
+    
+    print(glue("Saving {filename} into {path}"))
+    
+    ggsave(
+      filename,
+      width = 5, 
+      height = 5, 
+      plot = p,
+      path = path
+    )
+  }
+  
   p
 }

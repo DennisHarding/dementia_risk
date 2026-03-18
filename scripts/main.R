@@ -49,9 +49,8 @@ analysis_tbl <- tibble(
 
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    data = map(data, ~ filter(.x, !is.na(ht),
-                              !is.na(hf),
-                              !is.na(stroke))
+    data = map(data, ~ filter(.x, !is.na(sbp),
+                              !is.na(dbp),)
     )
   )
 
@@ -62,11 +61,12 @@ analysis_tbl <- analysis_tbl %>%
         I(age_baseline^2) +
         sex + 
         prs +
+        gene_apoe +
         edu_cont +
         smok_ever +
         alc +
-        gene_apoe 
-        
+        dbp +
+        sbp
       ,
       data = .x
     ))
@@ -81,9 +81,10 @@ analysis_tbl <- analysis_tbl %>%
         I(age_baseline^2) +
         sex + 
         prs +
+        gene_apoe +
         edu_cont +
         smok_ever +
-        gene_apoe
+        alc
       ,
       data = .x
     ))
@@ -143,13 +144,14 @@ analysis_tbl <- analysis_tbl %>%
       edu = 0,
       gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
       smok_ever = 0,
+      alc = 0,
       edu_cont = mean(.x$edu_cont, na.rm = TRUE),
-      ht = 0,
-      hf = 0,
       stroke = 0,
-      age_baseline = seq(min(.x$age_baseline, na.rm = TRUE),
-                     max(.x$age_baseline, na.rm = TRUE),
-                     length.out = 200)
+      age_baseline = mean(.x$age_baseline, na.rm = TRUE),
+      sbp = 0,
+      dbp = seq(min(.x$dbp, na.rm = TRUE),
+                max(.x$dbp, na.rm = TRUE),
+                length.out = 200)
     ))
   )
 
@@ -158,7 +160,8 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     spline_plot = pmap(list(type, cox_fit, data, pred_df),
                ~ plot_spline(..1, ..2, ..3, ..4, 
-                             var_name = "age_baseline"))
+                             var = "dbp",
+                             save = TRUE))
   )
 
 # PRINT SPLINE PLOTS
@@ -169,7 +172,9 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     spline_plot_vs = pmap(list(type, cox_fit, data, pred_df, cox_fit_new),
                ~ plot_spline(..1, ..2, ..3, ..4, ..5, 
-                             var_name = "age_baseline"))
+                             var_name = "age_baseline",
+                             save = FALSE)
+    )
   )
 
 
@@ -179,6 +184,8 @@ analysis_tbl %>% pull(spline_plot_vs) %>% walk(print)
 #> -----------------------------
 #> Proportional Hazards tests - Schoenfeld residuals
 #> -----------------------------
+source("R/plot_sfr.R")
+
 # Tests
 analysis_tbl <- analysis_tbl %>%
   mutate(
@@ -187,13 +194,12 @@ analysis_tbl <- analysis_tbl %>%
     )
   )
 
-source("R/plot_sfr.R")
 
 # Plots
 analysis_tbl <- analysis_tbl %>%
   mutate(
     ph_plot = pmap(list(type, ph_test), ~ 
-      plot_sfr(..1, ..2, save = TRUE))
+      plot_sfr(..1, ..2, save = FALSE))
   )
 
 # PRINT PH PLOTS
@@ -208,9 +214,9 @@ analysis_tbl <- analysis_tbl %>%
   mutate(surv_curvs = pmap(list(type, data), ~ {
     
     # SPECIFY vars of interest -->
-    vars = c("sex")
+    vars = c("sbp", "dbp")
     
-    plot_loglog(..1, ..2, vars, save = TRUE)
+    plot_loglog(..1, ..2, vars, save = FALSE)
   }))
 
 analysis_tbl %>% pull(surv_curvs) %>% walk(print)
@@ -229,8 +235,6 @@ analysis_tbl <- analysis_tbl %>%
 
 # PRINT FOREST PLOTS
 analysis_tbl %>% pull(forest_plot) %>% walk(print)
-
-
 
 #> -----------------------------
 #> Generate Summary Table
@@ -253,7 +257,9 @@ summary_table <-
     "vd_bin",
     "vrd_bin",
     "prs",
-    "alldm"
+    "alldm",
+    "sbp",
+    "dbp"
   ) %>%
   mutate(
     sex = factor(sex,
@@ -268,7 +274,5 @@ summary_table <-
     ),
     missing = "ifany"
   )
-
-
 
 summary_table
