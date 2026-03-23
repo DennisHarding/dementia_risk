@@ -15,7 +15,6 @@ format_df <- function(data = data){
       prs = phylo_score
     ) %>%
     mutate(
-      
       # Define exit dates (earliest of event, death, or censoring)
       exit_date_ad = pmin(death_date, ad_hes, censor_date_new, na.rm=TRUE),
       exit_date_vd = pmin(death_date, vd_hes, censor_date_new, na.rm=TRUE),
@@ -45,7 +44,8 @@ format_df <- function(data = data){
         edu_yrs >= 9 ~ 1,
         edu_yrs < 9 ~ 0,
         .default = NA_real_
-      ),
+      ) %>%
+        as.factor(),
       edu_cont = case_when(
         edu_yrs == -3 ~ NA_real_,
         edu_yrs == NA ~ NA_real_,
@@ -57,58 +57,71 @@ format_df <- function(data = data){
         smok_ever == "Yes" ~ 1,
         smok_ever == "No" ~ 0,
         .default = NA_real_
-      ),
+      ) %>%
+        as.factor(),
       
       # Alcohol frequency grouped
       alc = case_when(
         alc_freq %in% c(1,2,3) ~ 0,
         alc_freq %in% c(4,5,6) ~ 1,
         .default = NA_real_
-      ),
+      ) %>%
+        as.factor(),
       
       # Earliest stroke record
-      stroke_first = pmin(giga_stroke_hes_df, giga_ih_hes_df, is_hes_df, na.rm=TRUE),
+      stroke_first = pmin(giga_stroke_hes_df, 
+                          giga_ih_hes_df, 
+                          is_hes_df, na.rm=TRUE
+      ),
       
       # Baseline disease indicators (present before entry)
       allstroke = case_when(
         stroke_first <= entry_date ~ 1,
         stroke_first > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       is = case_when(
         is_hes_df <= entry_date ~ 1,
         is_hes_df > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       ih = case_when(
         giga_ih_hes_df <= entry_date ~ 1,
         giga_ih_hes_df > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       is_ih = case_when(
         is_hes_df <= entry_date | giga_ih_hes_df <= entry_date ~ 1,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       ht = case_when(
         ht_hes_df <= entry_date ~ 1,
         ht_hes_df > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       hf = case_when(
         hf_hes_df <= entry_date ~ 1,
         hf_hes_df > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       ihd = case_when(
         ihd_hes_df <= entry_date ~ 1,
         ihd_hes_df > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       alldm = case_when(
         alldm_hes_df <= entry_date ~ 1,
         alldm_hes_df > entry_date ~ 0,
         .default = 0
-      ),
+      ) %>%
+        as.factor(),
       
       # Derived lipid measure
       non_hdl = chol - hdl,
@@ -116,7 +129,11 @@ format_df <- function(data = data){
         non_hdl > median(non_hdl) ~ 1,
         non_hdl <= median(non_hdl) ~ 0,
         .default = NA_real_
-      ),
+      ) %>%
+        as.factor(),
+      
+      prs_fac = ntile(prs, 4) %>%
+        as.factor(),
       # Set APOE reference genotype
       gene_apoe = relevel(as.factor(gene_apoe), ref = "e33")
     ) %>%

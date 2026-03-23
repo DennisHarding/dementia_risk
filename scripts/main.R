@@ -3,6 +3,11 @@ library(data.table)
 library(survival)
 library(survminer)
 library(glue)
+library(gtable)
+library(patchwork)
+library(broom)
+library(glmnet)
+library(forestplot)
 
 #> -----------------------------
 #> DATA FORMATTING
@@ -229,17 +234,12 @@ analysis_tbl %>% pull(surv_curvs) %>% walk(print)
 #> -----------------------------
 #> Forest plots
 #> -----------------------------
-library(ggforestplot)
-source("R/plot_forest.R")
+source("R/plot_forest_base.R")
 
-analysis_tbl <- analysis_tbl %>%
-  mutate(
-    forest_plot = pmap(list(type, cox_fit), ~
-      plot_forest(..1, ..2))
-  )
+analysis_tbl = analysis_tbl %>% 
+  mutate(forest_plot = pmap(list(type, data), ~ 
+                             plot_forest(..1, ..2)))
 
-# PRINT FOREST PLOTS
-analysis_tbl %>% pull(forest_plot) %>% walk(print)
 
 #> -----------------------------
 #> Generate Summary Table
