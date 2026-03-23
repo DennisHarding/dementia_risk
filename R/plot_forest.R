@@ -6,7 +6,8 @@ plot_forest <- function(type, data){
                "alc",
 #               "ht",
                "is_ih",
-               "sbp10"
+               "sbp10",
+               "dbp10"
     )
     
     legends <- list("alldm" = "Diabetes", 

@@ -107,10 +107,10 @@ format_df <- function(data = data){
         .default = 0
       ) %>%
         as.factor(),
-      sbp10 = sbp * 10,
-      dbp10 = dbp * 10,
-      bpdiff10 = (sbp - dbp) * 10,
-      bpadd10 = (sbp + dbp) * 10,
+      sbp10 = sbp / 10,
+      dbp10 = dbp / 10,
+      bpdiff10 = (sbp - dbp) / 10,
+      bpadd10 = (sbp + dbp) / 10,
       hf = case_when(
         hf_hes_df <= entry_date ~ 1,
         hf_hes_df > entry_date ~ 0,

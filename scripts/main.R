@@ -77,12 +77,17 @@ analysis_tbl <- analysis_tbl %>%
         edu_cont +
         smok_ever +
         alc +
-        ht
+        dbp10 +
+        sbp10
       ,
       data = .x
     ))
   )
 
+analysis_tbl %>% 
+  mutate(cox_summary = map(cox_fit, summary)) %>% 
+  pull(cox_summary) %>% 
+  walk(print)
 # Optional: define candidate cox model:
 
 analysis_tbl <- analysis_tbl %>% 
@@ -103,14 +108,6 @@ analysis_tbl <- analysis_tbl %>%
     ))
   )
 
-# Print summary of cox models
-analysis_tbl %>% 
-  mutate(cox_summary = map(cox_fit, summary),
-         hr = map(cox_summary, ~ .x$coefficients[, c("exp(coef)")]),
-         concordance = map(cox_summary, ~ .x$concordance[1])
-           ) %>% 
-  pull(hr, concordance) %>% 
-  walk(print)
 
 analysis_tbl %>% 
   mutate(cox_summary_new = map(cox_fit_new, summary)) %>% 
@@ -183,19 +180,19 @@ analysis_tbl <- analysis_tbl %>%
 # PRINT SPLINE PLOTS
 analysis_tbl %>% pull(spline_plot) %>% walk(print)
 
-# Produce spline plots WITH COMPARISON
-analysis_tbl <- analysis_tbl %>%
-  mutate(
-    spline_plot_vs = pmap(list(type, cox_fit, data, pred_df, cox_fit_new),
-               ~ plot_spline(..1, ..2, ..3, ..4, ..5, 
-                             var_name = "age_baseline",
-                             save = FALSE)
-    )
-  )
-
-
-# Produce spline plots
-analysis_tbl %>% pull(spline_plot_vs) %>% walk(print)
+# # Produce spline plots WITH COMPARISON
+# analysis_tbl <- analysis_tbl %>%
+#   mutate(
+#     spline_plot_vs = pmap(list(type, cox_fit, data, pred_df, cox_fit_new),
+#                ~ plot_spline(..1, ..2, ..3, ..4, ..5, 
+#                              var_name = "age_baseline",
+#                              save = FALSE)
+#     )
+#   )
+# 
+# 
+# # Produce spline plots
+# analysis_tbl %>% pull(spline_plot_vs) %>% walk(print)
 }
 #> -----------------------------
 #> Proportional Hazards tests - Schoenfeld residuals
