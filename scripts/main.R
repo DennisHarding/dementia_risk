@@ -1,4 +1,7 @@
-library(tidyverse)
+#> -----------------------------
+#> LOAD LIBRARIES
+#> -----------------------------
+{library(tidyverse)
 library(data.table)
 library(survival)
 library(survminer)
@@ -8,25 +11,24 @@ library(patchwork)
 library(broom)
 library(glmnet)
 library(forestplot)
-
+}
 #> -----------------------------
 #> DATA FORMATTING
 #> -----------------------------
-source("R/formatting.R")
+{data <- fread("data/custom_data_1.tsv")
 
-data <- fread("data/custom_data_1.tsv")
+source("R/formatting.R")
 
 df <- format_df(data)
 
 df_ad <- format_df_ad(df)
 df_vd <- format_df_vd(df)
 df_vrd <- format_df_vrd(df)
-#df_alldem <- format_df_alldem()
-
+}
 #> -----------------------------
 #> Prepare analysis table
 #> -----------------------------
-
+{
 types_list <- list(
   AD = "AD",
   VD = "VD",
@@ -43,23 +45,27 @@ analysis_tbl <- tibble(
   type = types_list,
   data = data_list
 )
+}
+#> -----------------------------
+#> Forest plots
+#> -----------------------------
+{
+source("R/plot_forest.R")
 
-
-#> prs:gene_apoe34 significant interaction for VD
-#> 
-
+analysis_tbl = analysis_tbl %>% 
+  mutate(forest_plot = pmap(list(type, data), ~ 
+                              plot_forest(..1, ..2)))
+}
 #> -----------------------------
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
-
-analysis_tbl <- analysis_tbl %>%
+{analysis_tbl <- analysis_tbl %>%
   mutate(
     data = map(data, ~ filter(.x, !is.na(sbp),
                               !is.na(dbp),
                               !is.na(ht))
     )
   )
-
 analysis_tbl <- analysis_tbl %>% 
   mutate(
     cox_fit = map(data, ~ coxph(
@@ -110,11 +116,11 @@ analysis_tbl %>%
   mutate(cox_summary_new = map(cox_fit_new, summary)) %>% 
   pull(cox_summary_new) %>% 
   walk(print)
-
+}
 #> -----------------------------
 #> Anova test
 #> -----------------------------
-
+{
 analysis_tbl <- analysis_tbl %>%
   mutate(
     anova_test = pmap(list(cox_fit, cox_fit_new), ~ 
@@ -124,11 +130,11 @@ analysis_tbl <- analysis_tbl %>%
 
 # Print anova tests
 analysis_tbl %>% pull(anova_test) %>% walk(print)
-
+}
 #> -----------------------------
 #> AIC test
 #> -----------------------------
-
+{
 analysis_tbl <- analysis_tbl %>%
   mutate(
     AIC_test = pmap(list(cox_fit, cox_fit_new), ~ 
@@ -139,11 +145,11 @@ analysis_tbl <- analysis_tbl %>%
 # Print AIC tests
 analysis_tbl %>% pull(AIC_test) %>% walk(print)
 
-
+}
 #> -----------------------------
 #> SPLINES
 #> -----------------------------
-source("R/plot_spline.R")
+{source("R/plot_spline.R")
 
 # Generate reference prediction data
 analysis_tbl <- analysis_tbl %>% 
@@ -190,11 +196,11 @@ analysis_tbl <- analysis_tbl %>%
 
 # Produce spline plots
 analysis_tbl %>% pull(spline_plot_vs) %>% walk(print)
-
+}
 #> -----------------------------
 #> Proportional Hazards tests - Schoenfeld residuals
 #> -----------------------------
-source("R/plot_sfr.R")
+{source("R/plot_sfr.R")
 
 # Tests
 analysis_tbl <- analysis_tbl %>%
@@ -214,11 +220,11 @@ analysis_tbl <- analysis_tbl %>%
 
 # PRINT PH PLOTS
 analysis_tbl %>% pull(ph_plot) %>% walk(print)
-
+}
 #> -----------------------------
 #> Proportional Hazards tests - Log-Log plots
 #> -----------------------------
-source("R/plot_loglog.R")
+{source("R/plot_loglog.R")
 
 analysis_tbl <- analysis_tbl %>%
   mutate(surv_curvs = pmap(list(type, data), ~ {
@@ -230,21 +236,11 @@ analysis_tbl <- analysis_tbl %>%
   }))
 
 analysis_tbl %>% pull(surv_curvs) %>% walk(print)
-
-#> -----------------------------
-#> Forest plots
-#> -----------------------------
-source("R/plot_forest_base.R")
-
-analysis_tbl = analysis_tbl %>% 
-  mutate(forest_plot = pmap(list(type, data), ~ 
-                             plot_forest(..1, ..2)))
-
-
+}
 #> -----------------------------
 #> Generate Summary Table
 #> -----------------------------
-
+{
 library(gtsummary)
 
 #remember to select variables to include in summary table
@@ -281,3 +277,4 @@ summary_table <-
   )
 
 summary_table
+}

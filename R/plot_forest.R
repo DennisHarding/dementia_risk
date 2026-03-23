@@ -4,15 +4,19 @@ plot_forest <- function(type, data){
                "smok_ever", 
                "edu", 
                "alc",
-               "ht",
-               "is_ih"
+#               "ht",
+               "is_ih",
+               "sbp10"
     )
+    
     legends <- list("alldm" = "Diabetes", 
                     "smok_ever" = "Smoking", 
                     "edu" = "Education", 
                     "alc" = "Alcohol intake",
-                    "ht" = "Hypertension",
-                    "is_ih" = "Intracranial stroke"
+#                    "ht" = "Hypertension",
+                    "is_ih" = "Intracranial stroke",
+                    "sbp10" = "Systolic BP 10",
+                    "dbp10" = "Diastolic BP 10"
     )
     chain <- str_flatten(names, collapse = " + ")
     term <- c()
@@ -125,7 +129,7 @@ plot_forest <- function(type, data){
         term = fct_inorder(term)
       )
     risk_factors_header <- tibble(
-      term = glue("Risk factors - {type}"), 
+      term = paste("Risk factor -", type), 
       conf = "HR (95% CI)", 
       model = "", 
       estimate = NA, 
@@ -146,13 +150,13 @@ plot_forest <- function(type, data){
       boxsize = 0.3,
       xlab = "HR (95% CI)",
       xlog = TRUE,
-      xticks = c(0.35, 0.5, 1, 2, 4, 6),
+      xticks = c(0.35, 0.5, 1, 2, 4, 6, 8),
       ci.vertices = TRUE,
       fn.ci_norm = fpDrawCircleCI,
       lwd.ci = 2,
       col = fpColors(box = "black", line = "black", zero = "black"),
       txt_gp = fpTxtGp(cex = 2, xlab = gpar(cex = 2, fontface = "bold"), ticks = gpar(cex = 2)),
-      mar = unit(c(1, 1, 1, 1), "cm")
+      mar = unit(c(0.5, 1, 0.5, 1), "cm")
     )
     png(paste0("forest_", type, ".png"), width=18, height=22.25, units="in", res=300)
     print(forest)

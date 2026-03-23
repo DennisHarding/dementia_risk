@@ -9,12 +9,14 @@ format_df <- function(data = data){
   df <- data %>%
     # Shorten variable names
     rename(
+      age_int = age_baseline,
       ad_hes = ad_hes_df,
       vd_hes = vd_hes_df,
       vrd_hes = nonad_hes_df,   # vascular-related dementia
       prs = phylo_score
     ) %>%
     mutate(
+      
       # Define exit dates (earliest of event, death, or censoring)
       exit_date_ad = pmin(death_date, ad_hes, censor_date_new, na.rm=TRUE),
       exit_date_vd = pmin(death_date, vd_hes, censor_date_new, na.rm=TRUE),
@@ -22,6 +24,7 @@ format_df <- function(data = data){
       exit_date_alldem = pmin(death_date, ad_hes, vd_hes, vrd_hes, censor_date_new, na.rm=TRUE),
       
       # Follow-up time (years)
+      age_baseline = as.numeric(difftime(entry_date, birth_date, unit = "days")) / 365.25,
       futime_ad = as.numeric(difftime(exit_date_ad, entry_date, unit = "days")) / 365.25,
       futime_vd = as.numeric(difftime(exit_date_vd, entry_date, unit = "days")) / 365.25,
       futime_vrd = as.numeric(difftime(exit_date_vrd, entry_date, unit = "days")) / 365.25,
@@ -104,6 +107,10 @@ format_df <- function(data = data){
         .default = 0
       ) %>%
         as.factor(),
+      sbp10 = sbp * 10,
+      dbp10 = dbp * 10,
+      bpdiff10 = (sbp - dbp) * 10,
+      bpadd10 = (sbp + dbp) * 10,
       hf = case_when(
         hf_hes_df <= entry_date ~ 1,
         hf_hes_df > entry_date ~ 0,
