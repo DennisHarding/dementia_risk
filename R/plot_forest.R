@@ -67,6 +67,43 @@ plot_forest <- function(type, data){
       conf_max_uni_gen <- c(conf_max_uni_gen,as.numeric(model_uni_gen[str_detect(model_uni_gen$term, i),]$conf.high))
       estimate_uni_gen <- c(estimate_uni_gen,as.numeric(model_uni_gen[str_detect(model_uni_gen$term, i),]$estimate))
     }
+    
+    prs_rows <- model_all_gen %>%
+      filter(str_detect(term, "prs_fac")) %>%
+      mutate(term = paste0("prs", substr(term, nchar(term), nchar(term)), " vs prs3"))
+    
+    apoe_rows <- model_all_gen %>%
+      filter(str_detect(term, "gene_apoe")) %>%
+      mutate(term = paste0(substr(term, nchar(term) - 2, nchar(term)), " vs e33"))
+    
+    prs_df <- prs_rows %>%
+      transmute(
+        term = term,
+        conf_min = conf.low,
+        conf_max = conf.high,
+        estimate = estimate,
+        model = "all_gen"
+      )
+    
+    apoe_df <- apoe_rows %>%
+      transmute(
+        term = term,
+        conf_min = conf.low,
+        conf_max = conf.high,
+        estimate = estimate,
+        model = "all_gen"
+      )
+    
+    gen_header <- tibble(
+      term = "Genetic factors",
+      conf = "",
+      model = "",
+      estimate = NA,
+      conf_min = NA,
+      conf_max = NA,
+      is_summary = TRUE
+    )
+    
     data_uni <- data.frame(
       term = labels_term, 
       conf_min = conf_min_uni, 
@@ -131,6 +168,17 @@ plot_forest <- function(type, data){
         ),
         term = fct_inorder(term)
       )
+    
+    gen_rows <- bind_rows(prs_df, apoe_df) %>%
+      mutate(
+        conf = paste0(sprintf("%.2f", estimate), 
+                      " (", sprintf("%.2f", conf_min), 
+                      ", ", sprintf("%.2f", conf_max), ")"),
+        is_summary = FALSE
+      )
+    
+    df_plot <- bind_rows(df_plot, gen_header, gen_rows)
+    
     risk_factors_header <- tibble(
       term = paste("Risk factor -", type), 
       conf = "HR (95% CI)", 

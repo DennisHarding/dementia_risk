@@ -1,14 +1,55 @@
 
-paste0(df, 1:5)
+create_pred_df <- funciton(data, var){
+  pred_df <- tibble(
+    prs = mean(data$prs, na.rm = TRUE),
+    sex = 0,
+    edu = 0,
+    gene_apoe = factor("e33", levels = levels(data$gene_apoe)),
+    smok_ever = 0,
+    alc = 0,
+    stroke = 0,
+    
+    edu_cont = mean(data$edu_cont, na.rm = TRUE),
+    age_baseline = mean(data$age_baseline, na.rm = TRUE),
+    dbp10 = mean(data$dbp10, na.rm = TRUE),
+    sbp10 = mean(data$sbp10, na.rm = TRUE)
+  )
+  pred_df %>% mutate(
+    var = seq(min(data[[var]], na.rm = TRUE),
+          max(data[[var]], na.rm = TRUE),
+          length.out = 200)
+
+  )
+}
 
 
-spline_tbl = list(
-  df1 = "df1",
-  df2 = "df2",
-  df3 = "df3",
-  df4 = "df4"
-)
+analysis_tbl <- analysis_tbl %>% 
+  mutate(
+    pred_df = map(data, ~ tibble(
+      prs = mean(.x$prs, na.rm = TRUE),
+      sex = 0,
+      edu = 0,
+      gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
+      smok_ever = 0,
+      alc = 0,
+      stroke = 0,
+    
+      edu_cont = mean(.x$edu_cont, na.rm = TRUE),
+      age_baseline = mean(.x$age_baseline, na.rm = TRUE),
+      dbp10 = mean(.x$dbp10, na.rm = TRUE),
+      sbp10 = mean(.x$sbp10, na.rm = TRUE)
+    ))
+  )
 
+
+var = age_baseline
+
+start <- 1
+stop <- 4
+
+vars <- paste0("df", start:stop)
+vars
+spline_tbl <- setNames(as.list(vars), start:stop)
 
 names = c(
   "age_baseline",
@@ -29,9 +70,9 @@ spline_tbl <- spline_tbl %>%
         sex + 
         prs +
         gene_apoe +
-        edu_cont +
         smok_ever +
         alc +
+        edu_cont +
         dbp10 +
         sbp10
       ,
@@ -39,24 +80,6 @@ spline_tbl <- spline_tbl %>%
     ))
   )
 # Generate reference prediction data
-analysis_tbl <- analysis_tbl %>% 
-  mutate(
-    pred_df = map(data, ~ tibble(
-      prs = mean(.x$prs, na.rm = TRUE),
-      sex = 0,
-      edu = 0,
-      gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
-      smok_ever = 0,
-      alc = 0,
-      edu_cont = mean(.x$edu_cont, na.rm = TRUE),
-      stroke = 0,
-      age_baseline = mean(.x$age_baseline, na.rm = TRUE),
-      dbp = 0,
-      sbp = seq(min(.x$sbp, na.rm = TRUE),
-                max(.x$sbp, na.rm = TRUE),
-                length.out = 200)
-    ))
-  )
 
 # Produce spline plots
 analysis_tbl <- analysis_tbl %>%

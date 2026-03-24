@@ -139,8 +139,8 @@ format_df <- function(data = data){
       ) %>%
         as.factor(),
       
-      prs_fac = ntile(prs, 4) %>%
-        as.factor(),
+      prs_fac = factor(ntile(prs, 5), levels = 1:5),
+      prs_fac = relevel(prs_fac, ref = "3"),
       # Set APOE reference genotype
       gene_apoe = relevel(as.factor(gene_apoe), ref = "e33")
     ) %>%
