@@ -94,8 +94,18 @@ plot_forest <- function(type, data){
         model = "all_gen"
       )
     
-    gen_header <- tibble(
-      term = "Genetic factors",
+    prs_header <- tibble(
+      term = "Polygenetic Risk Score",
+      conf = "",
+      model = "",
+      estimate = NA,
+      conf_min = NA,
+      conf_max = NA,
+      is_summary = TRUE
+    )
+    
+    apoe_header <- tibble(
+      term = "ApoE variants",
       conf = "",
       model = "",
       estimate = NA,
@@ -169,15 +179,29 @@ plot_forest <- function(type, data){
         term = fct_inorder(term)
       )
     
-    gen_rows <- bind_rows(prs_df, apoe_df) %>%
+    prs_rows <- bind_rows(prs_df) %>%
       mutate(
         conf = paste0(sprintf("%.2f", estimate), 
                       " (", sprintf("%.2f", conf_min), 
                       ", ", sprintf("%.2f", conf_max), ")"),
         is_summary = FALSE
       )
+    apoe_rows <- bind_rows(apoe_df) %>%
+      mutate(
+        conf = paste0(sprintf("%.2f", estimate), 
+                      " (", sprintf("%.2f", conf_min), 
+                      ", ", sprintf("%.2f", conf_max), ")"),
+        is_summary = FALSE
+      )
+    spacer <- tibble(term = "", 
+                     conf = "", 
+                     model = "", 
+                     estimate = NA, 
+                     conf_min = NA, 
+                     conf_max = NA, 
+                     is_summary = FALSE)
     
-    df_plot <- bind_rows(df_plot, gen_header, gen_rows)
+    df_plot <- bind_rows(df_plot, apoe_header, apoe_rows, spacer, prs_header, prs_rows)
     
     risk_factors_header <- tibble(
       term = paste("Risk factor -", type), 
@@ -205,6 +229,7 @@ plot_forest <- function(type, data){
       ci.vertices = TRUE,
       fn.ci_norm = fpDrawCircleCI,
       lwd.ci = 2,
+      line.margin = 1,
       col = fpColors(box = "black", line = "black", zero = "black"),
       txt_gp = fpTxtGp(cex = 2, xlab = gpar(cex = 2, fontface = "bold"), ticks = gpar(cex = 2)),
       mar = unit(c(0.5, 1, 0.5, 1), "cm")
