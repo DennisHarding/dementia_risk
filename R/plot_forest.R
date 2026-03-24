@@ -4,20 +4,22 @@ plot_forest <- function(type, data){
                "smok_ever", 
                "edu", 
                "alc",
-#               "ht",
                "is_ih",
                "sbp10",
-               "dbp10"
+               "dbp10",
+               "ht",
+               "ihd"
     )
     
     legends <- list("alldm" = "Diabetes", 
                     "smok_ever" = "Smoking", 
                     "edu" = "Education", 
                     "alc" = "Alcohol intake",
-#                    "ht" = "Hypertension",
                     "is_ih" = "Intracranial stroke",
                     "sbp10" = "Systolic BP 10",
-                    "dbp10" = "Diastolic BP 10"
+                    "dbp10" = "Diastolic BP 10",
+                    "ht" = "Hypertension",
+                    "ihd" = "Ischemic Heart Disease"
     )
     chain <- str_flatten(names, collapse = " + ")
     term <- c()

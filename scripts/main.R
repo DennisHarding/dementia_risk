@@ -1,7 +1,8 @@
 #> -----------------------------
 #> LOAD LIBRARIES
 #> -----------------------------
-{library(tidyverse)
+{
+library(tidyverse)
 library(data.table)
 library(survival)
 library(survminer)
@@ -148,6 +149,23 @@ analysis_tbl %>% pull(AIC_test) %>% walk(print)
 #> -----------------------------
 {source("R/plot_spline.R")
 
+analysis_tbl <- analysis_tbl %>% 
+  mutate(
+    cox_fit_spline = map(data, ~ coxph(
+      Surv(futime, fail_bin) ~ 
+        age_baseline +
+        sex + 
+        prs +
+        gene_apoe +
+        edu_cont +
+        smok_ever +
+        alc +
+        dbp10 +
+        sbp10
+      ,
+      data = .x
+    ))
+  )
 # Generate reference prediction data
 analysis_tbl <- analysis_tbl %>% 
   mutate(
@@ -171,7 +189,7 @@ analysis_tbl <- analysis_tbl %>%
 # Produce spline plots
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    spline_plot = pmap(list(type, cox_fit, data, pred_df),
+    spline_plot = pmap(list(type, cox_fit_spline, data, pred_df),
                ~ plot_spline(..1, ..2, ..3, ..4, 
                              var = "sbp",
                              save = TRUE))
