@@ -253,6 +253,17 @@ analysis_tbl <- analysis_tbl %>%
 analysis_tbl %>% pull(surv_curvs) %>% walk(print)
 }
 #> -----------------------------
+#> Feature selection - lasso cox
+#> -----------------------------
+{
+source("R/plot_lasso.R")
+analysis_tbl <- analysis_tbl %>%
+  mutate(lasoo_plot = pmap(list(type, data), ~ {
+    plot_lasso(..1, ..2)
+  }))
+
+}
+#> -----------------------------
 #> Generate Summary Table
 #> -----------------------------
 {

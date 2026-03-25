@@ -15,7 +15,7 @@ plot_forest <- function(type, data){
                     "smok_ever" = "Smoking", 
                     "edu" = "Education", 
                     "alc" = "Alcohol intake",
-                    "is_ih" = "Intracranial stroke",
+                    "is_ih" = "is_ih stroke",
                     "sbp10" = "Systolic BP 10",
                     "dbp10" = "Diastolic BP 10",
                     "ht" = "Hypertension",
