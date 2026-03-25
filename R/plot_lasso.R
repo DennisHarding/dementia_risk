@@ -119,7 +119,7 @@ plot_lasso <- function(type, data){
     ) %>%
     filter(!(str_detect(variable, "^gene")) & !(str_detect(variable, "^prs_fac")))
   
-  png(paste0("lasso_gen_", type, ".png"), width=12, height=6, units="in", res=300)
+  png(paste0("figures/lasso/lasso_gen_", type, ".png"), width=12, height=6, units="in", res=300)
   par(mar = c(5, 4, 4, 12))
   long_coef_df <- as.data.frame(long_coef_df)
   vars <- unique(long_coef_df$variable)
@@ -140,7 +140,7 @@ plot_lasso <- function(type, data){
   legend("topright", inset = c(-0.25, 0.3), xpd = TRUE, legend = legend_plot, col = rainbow(length(vars))[seq_along(vars)], lty = 1)
   dev.off()
   
-  png(paste0("lasso_", type, ".png"), width=12, height=6, units="in", res=300)
+  png(paste0("figures/lasso/lasso_", type, ".png"), width=12, height=6, units="in", res=300)
   par(mar = c(5, 4, 4, 12))
   long_wo_gen <- as.data.frame(long_wo_gen)
   vars <- unique(long_wo_gen$variable)

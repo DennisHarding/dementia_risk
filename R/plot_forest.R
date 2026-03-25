@@ -234,7 +234,7 @@ plot_forest <- function(type, data){
       txt_gp = fpTxtGp(cex = 2, xlab = gpar(cex = 2, fontface = "bold"), ticks = gpar(cex = 2)),
       mar = unit(c(0.5, 1, 0.5, 1), "cm")
     )
-    png(paste0("forest_", type, ".png"), width=18, height=22.25, units="in", res=300)
+    png(paste0("figures/forestplot/forest_", type, ".png"), width=18, height=22.25, units="in", res=300)
     print(forest)
     forest
     dev.off()
