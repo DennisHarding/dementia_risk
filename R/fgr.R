@@ -1,0 +1,1 @@
+0, 1, 2, = c("censor", "fail", "competing risk")
