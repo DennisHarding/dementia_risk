@@ -1,5 +1,29 @@
 
 
+lbs_fun <- function(lra, ...) {
+  
+  fit <- lra$glmnet.fit
+  
+  L=which(fit$lambda==lra$lambda.min)
+  
+  ystart <- sort(fit$beta[abs(fit$beta[,L])>0,L])
+  labs <- names(ystart)
+  r <- range(fit$beta[,100]) # max gap between biggest and smallest coefs at smallest lambda i.e., 100th lambda
+  yfin <- seq(r[1],r[2],length=length(ystart))
+  
+  xstart<- log(lra$lambda.min)
+  xfin <- xstart+1
+  
+  
+  text(xfin+0.3,yfin,labels=labs,...)
+  segments(xstart,ystart,xfin,yfin)
+  
+  
+}
+
+plot(lra$glmnet.fit,label=F, xvar="lambda", xlim=c(-5.2,0), lwd=2) #xlim, lwd is optional
+
+
 legends <- list(
   "sex" = "Sex", 
   "alldm" = "Diabetes", 

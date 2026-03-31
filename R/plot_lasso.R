@@ -20,9 +20,9 @@ type = "AD"
 
   X <- data %>%
     select(c("age_baseline", 
-             "prs_fac", 
+             "prs_level", 
              "sex", 
-             "gene_apoe", 
+             "gene_apoe_level", 
              "alldm", 
              "smok_ever", 
              "ht", 
@@ -60,9 +60,9 @@ type = "AD"
       lambda_index = as.integer(gsub("lambda_", "", lambda_id)),
       lambda = lambda_seq[lambda_index],
       log_lambda = log(lambda)
-    ) %>%
-    filter((str_detect(variable, str_c(cox_selected[[type]], collapse = "|"))) | 
-             (str_detect(variable, "^gene")|str_detect(variable, "^prs")))
+    )# %>%
+#    filter((str_detect(variable, str_c(cox_selected[[type]], collapse = "|"))) | 
+#             (str_detect(variable, "^gene")|str_detect(variable, "^prs")))
   long_wo_gen <- coef_df %>%
     pivot_longer(
       cols = starts_with("lambda_"),
@@ -143,3 +143,4 @@ type = "AD"
          lty = 1)
   dev.off()
 }
+
