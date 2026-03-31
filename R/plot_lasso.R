@@ -1,7 +1,9 @@
-cox_selected <- list("AD" = c("edu", "ht"),
+cox_selected <- list("AD" = c("age_baseline", "sex"),
                      "VD" = c("alldm", "is_ih"),
                      "VRD" = c("alldm", "is_ih", "ht"))
 legends <- list(
+  "gene_apoe_level" = "ApoE Genotype",
+  "prs_level" = "Polygenetic Risk Score",
   "sex" = "Sex", 
   "alldm" = "Diabetes", 
   "smok_ever" = "Smoking", 
@@ -9,10 +11,11 @@ legends <- list(
   "alc" = "Alcohol intake", 
   "is_ih" = "is_ih Stroke",
   "ht" = "Hypertension", 
-  "dbp10" = "Diastolic BP 10",
-  "sbp10" = "Systolic BP 10",
+  "dbp" = "Diastolic BP 10",
+  "sbp" = "Systolic BP 10",
   "ihd" = "Ischemic Heart Disease",
-  "prs_fac" = "Polygenetic Risk Score"
+  "prs_fac" = "Polygenetic Risk Score",
+  "age_baseline" = "Age"
   )
 #plot_lasso <- function(type, data){
 data <- df_ad
@@ -60,9 +63,9 @@ type = "AD"
       lambda_index = as.integer(gsub("lambda_", "", lambda_id)),
       lambda = lambda_seq[lambda_index],
       log_lambda = log(lambda)
-    )# %>%
-#    filter((str_detect(variable, str_c(cox_selected[[type]], collapse = "|"))) | 
-#             (str_detect(variable, "^gene")|str_detect(variable, "^prs")))
+    ) %>%
+    filter((str_detect(variable, str_c(cox_selected[[type]], collapse = "|"))) | 
+             (str_detect(variable, "^gene")|str_detect(variable, "^prs")))
   long_wo_gen <- coef_df %>%
     pivot_longer(
       cols = starts_with("lambda_"),
@@ -74,13 +77,13 @@ type = "AD"
       lambda = lambda_seq[lambda_index],
       log_lambda = log(lambda)
     ) %>%
-    filter(!(str_detect(variable, "^gene")) & !(str_detect(variable, "^prs_fac")))
-  
+    filter(!(variable %in% unique(long_coef_df$variable)))
+
   png(paste0("figures/lasso/lasso_gen_", type, ".png"), 
       width=12, height=6, 
       units="in", 
       res=300)
-  par(mar = c(5, 4, 4, 12))
+  par(mar = c(5, 4, 4, 15))
   long_coef_df <- as.data.frame(long_coef_df)
   vars <- unique(long_coef_df$variable)
   lbd <- unique(long_coef_df$log_lambda)
@@ -90,7 +93,6 @@ type = "AD"
   })
   ord <- order(start_vals, decreasing = TRUE)
   vars <- vars[ord]
-  
   plot(NA, 
        xlim = range(long_coef_df$log_lambda), 
        ylim = range(long_coef_df$coefficient),
@@ -101,20 +103,20 @@ type = "AD"
     subdf <- long_coef_df[long_coef_df$variable == vars[i], ]
     lines(subdf$log_lambda, subdf$coefficient, col = rainbow(length(vars))[i])
   }
-  legend_plot <-  unlist(ifelse(gsub("[0-9]+$", "", vars) %in% names(legends), 
-                                legends[gsub("$", "", vars)], 
-                                gsub("$", "", vars)))
-  legend_plot <- names(legends)
+  vars
+  legend_plot <- unname(unlist(legends[gsub("[0-9]", "", vars)]))
   legend("topright", 
-         inset = c(-0.25, 0.3), 
+         inset = c(-0.35, 0.3), 
          xpd = TRUE, 
          legend = legend_plot, 
          col = rainbow(length(vars))[seq_along(vars)], 
          lty = 1)
   dev.off()
   
+  
+  
   png(paste0("figures/lasso/lasso_", type, ".png"), width=12, height=6, units="in", res=300)
-  par(mar = c(5, 4, 4, 12))
+  par(mar = c(5, 4, 4, 15))
   long_wo_gen <- as.data.frame(long_wo_gen)
   vars <- unique(long_wo_gen$variable)
   lbd <- unique(long_wo_gen$log_lambda)
@@ -136,11 +138,16 @@ type = "AD"
   }
   legend_plot <-  unlist(ifelse(gsub("[0-9]+$", "", vars) %in% names(legends), legends[gsub("[0-9]+$", "", vars)], gsub("[0-9]+$", "", vars)))
   legend("topright", 
-         inset = c(-0.25, 0.3), 
+         inset = c(-0.35, 0.3), 
          xpd = TRUE, 
          legend = legend_plot, 
          col = rainbow(length(vars))[seq_along(vars)], 
          lty = 1)
   dev.off()
+  
+  cvfit <- cv.glmnet(X_clean, y_clean, family = "cox")
+  
+  plot(cvfit)
+  
 }
 
