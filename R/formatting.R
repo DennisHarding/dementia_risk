@@ -141,9 +141,19 @@ format_df <- function(data = data){
       
       prs_fac = factor(ntile(prs, 5), levels = 1:5),
       prs_fac = relevel(prs_fac, ref = "3"),
+      prs_level = as.numeric(prs_fac),
       # Set APOE reference genotype
-      gene_apoe = relevel(as.factor(gene_apoe), ref = "e33")
-    ) %>%
+      gene_apoe = relevel(as.factor(gene_apoe), ref = "e33"),
+      gene_apoe_level = case_when(
+        gene_apoe == "e22" ~ 1,
+        gene_apoe == "e23" ~ 2,
+        gene_apoe == "e33" ~ 3,
+        gene_apoe == "e24" ~ 4,
+        gene_apoe == "e34" ~ 5,
+        gene_apoe == "e44" ~ 6,
+        .default = NA_real_
+      )
+      ) %>%
     
     # Restrict analysis population
     filter(
