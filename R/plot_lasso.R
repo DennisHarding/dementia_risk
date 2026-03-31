@@ -79,11 +79,11 @@ type = "AD"
     ) %>%
     filter(!(variable %in% unique(long_coef_df$variable)))
 
-  png(paste0("figures/lasso/lasso_gen_", type, ".png"), 
+  png(glue("figures/lasso/lasso_gen_{type}.png"), 
       width=12, height=6, 
       units="in", 
       res=300)
-  par(mar = c(5, 4, 4, 15))
+  par(mar = c(5, 4, 6, 15))
   long_coef_df <- as.data.frame(long_coef_df)
   vars <- unique(long_coef_df$variable)
   lbd <- unique(long_coef_df$log_lambda)
@@ -103,7 +103,11 @@ type = "AD"
     subdf <- long_coef_df[long_coef_df$variable == vars[i], ]
     lines(subdf$log_lambda, subdf$coefficient, col = rainbow(length(vars))[i])
   }
-  vars
+  
+  
+  title(main = glue("Lasso Genetic Coefficient Paths - {type}"),
+        cex.main = 2)
+  
   legend_plot <- unname(unlist(legends[gsub("[0-9]", "", vars)]))
   legend("topright", 
          inset = c(-0.35, 0.3), 
@@ -115,8 +119,8 @@ type = "AD"
   
   
   
-  png(paste0("figures/lasso/lasso_", type, ".png"), width=12, height=6, units="in", res=300)
-  par(mar = c(5, 4, 4, 15))
+  png(glue("figures/lasso/lasso_{type}.png"), width=12, height=6, units="in", res=300)
+  par(mar = c(5, 4, 6, 15))
   long_wo_gen <- as.data.frame(long_wo_gen)
   vars <- unique(long_wo_gen$variable)
   lbd <- unique(long_wo_gen$log_lambda)
@@ -136,6 +140,10 @@ type = "AD"
     subdf <- long_wo_gen[long_wo_gen$variable == vars[i], ]
     lines(subdf$log_lambda, subdf$coefficient, col = rainbow(length(vars))[i])
   }
+  
+  title(main = glue("Lasso Coefficient Paths - {type}"),
+        cex.main = 2)
+  
   legend_plot <-  unlist(ifelse(gsub("[0-9]+$", "", vars) %in% names(legends), legends[gsub("[0-9]+$", "", vars)], gsub("[0-9]+$", "", vars)))
   legend("topright", 
          inset = c(-0.35, 0.3), 
@@ -146,8 +154,19 @@ type = "AD"
   dev.off()
   
   cvfit <- cv.glmnet(X_clean, y_clean, family = "cox")
-  
+  png(glue("figures/lasso/Lasso_CV_{type}.png"), 
+      width=12, 
+      height=6, 
+      units="in", 
+      res=300)
+  par(mar = c(5, 5, 5, 2))
   plot(cvfit)
+  title(main = glue("Cox Lasso CV - {type}"),
+        cex.main = 2,
+        line = 2.7)
+  dev.off()
   
+  coef(cvfit, s = "lambda.1se")
+  coef(cvfit, s = "lambda.min")
 }
 
