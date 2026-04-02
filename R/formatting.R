@@ -153,7 +153,7 @@ format_df <- function(data = data){
         gene_apoe == "e44" ~ 6,
         .default = NA_real_
       ),
-      dead = !is.na(death_date)
+      death = !is.na(death_date)
       ) %>%
     
     # Restrict analysis population
