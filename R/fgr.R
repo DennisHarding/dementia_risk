@@ -1,9 +1,15 @@
 0, 1, 2, = c("censor", "fail", "competing risk")
 
-# extract 10 percent of dataset in respect to the competing risk variable.
-split <- initial_split(df, prop = 0.1, strata = fail_cr)
+cox_selected <- list("AD" = c("sex", "prs", "gene_apoe", "edu", "ht"),
+                     "VD" = c("sex", "prs", "gene_apoe", "alldm", "is_ih", "ht"),
+                     "VRD" = c("sex", "prs", "gene_apoe", "alldm", "is_ih", "ht"))
 
-df_train <- train(split)
+# extract 10 percent of dataset in respect to the competing risk variable.
+split <- initial_split(df_ad_test, prop = 0.1, strata = fail_cr)
+
+df_train_fgr <- training(split)
+
+hist <- Hist(time = futime, status = fail_cr)
 
 
 print("Fitting FGR")

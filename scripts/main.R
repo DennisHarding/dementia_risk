@@ -31,13 +31,13 @@ ad_split <- format_df_ad(df)
 vd_split <- format_df_vd(df)
 vrd_split <- format_df_vrd(df)
 
-df_ad_train <- train(ad_split)
-df_vd_train <- train(vd_split)
-df_vrd_train <- train(vrd_split)
+df_ad_train <- training(ad_split)
+df_vd_train <- training(vd_split)
+df_vrd_train <- training(vrd_split)
 
-df_ad_test <- test(ad_split)
-df_vd_test <- test(vd_split)
-df_vrd_test <- test(vrd_split)
+df_ad_test <- testing(ad_split)
+df_vd_test <- testing(vd_split)
+df_vrd_test <- testing(vrd_split)
 }
 #> -----------------------------
 #> Prepare analysis table
