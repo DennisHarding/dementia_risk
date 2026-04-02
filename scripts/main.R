@@ -13,6 +13,7 @@ library(broom)
 library(glmnet)
 library(forestplot)
 library(rsample)
+library(riskRegression)
 }
 #> -----------------------------
 #> DATA FORMATTING

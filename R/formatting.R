@@ -152,7 +152,8 @@ format_df <- function(data = data){
         gene_apoe == "e34" ~ 5,
         gene_apoe == "e44" ~ 6,
         .default = NA_real_
-      )
+      ),
+      dead = !is.na(death_date)
       ) %>%
     
     # Restrict analysis population
@@ -168,17 +169,19 @@ format_df <- function(data = data){
 
 # Alzheimer's Disease
 format_df_ad <- function(df = df){ 
-  df_ad <- df %>%
+  df <- df %>%
     mutate(
       exit_date = exit_date_ad,
       futime = futime_ad,
       fail_bin = ad_bin,
-      fail_age = age_ad
+      fail_age = age_ad,
+      fail_cr = ifelse(death == TRUE & fail_bin == 0, 2, fail_bin)
     ) %>%
     filter(
       futime > 0
     )
-  df_ad
+  
+  rsample::initial_split(df, prop = 0.8, strata = fail_cr)
 }
 
 # Vascular Dementia
@@ -188,12 +191,13 @@ format_df_vd <- function(df = df){
       exit_date = exit_date_vd,
       futime = futime_vd,
       fail_bin = vd_bin,
-      fail_age = age_vd
+      fail_age = age_vd,
+      fail_cr = ifelse(death == TRUE & fail_bin == 0, 2, fail_bin)
     ) %>%
     filter(
       futime > 0
     )
-  rsample::initialsplit(df, prop = 0.8, strata = fail_bin)
+  rsample::initial_split(df, prop = 0.8, strata = fail_cr)
 }
 
 # Vascular-Related Dementia
@@ -203,13 +207,14 @@ format_df_vrd <- function(df = df){
       exit_date = exit_date_vrd,
       futime = futime_vrd,
       fail_bin = vrd_bin,
-      fail_age = age_vrd
+      fail_age = age_vrd,
+      fail_cr = ifelse(death == TRUE & fail_bin == 0, 2, fail_bin)
     ) %>%
     filter(
       futime > 0
     )
   
-  rsample::initialsplit(df, prop = 0.8, strata = fail_bin)
+  rsample::initial_split(df, prop = 0.8, strata = fail_cr)
 }
 
 format_df_alldem <- function(df = df){
@@ -218,10 +223,11 @@ format_df_alldem <- function(df = df){
       exit_date = exit_date_alldem,
       futime = futime_alldem,
       fail_bin = alldem_bin,
+      fail_cr = ifelse(death == TRUE & fail_bin == 0, 2, fail_bin)
     ) %>%
     filter(
       futime > 0
     )
   
-  rsample::initialsplit(df, prop = 0.8, strata = fail_bin)
+  rsample::initial_split(df, prop = 0.8, strata = fail_cr)
 }
