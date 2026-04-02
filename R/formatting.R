@@ -183,7 +183,7 @@ format_df_ad <- function(df = df){
 
 # Vascular Dementia
 format_df_vd <- function(df = df){
-  df %>%
+  df <- df %>%
     mutate(
       exit_date = exit_date_vd,
       futime = futime_vd,
@@ -193,11 +193,12 @@ format_df_vd <- function(df = df){
     filter(
       futime > 0
     )
+  rsample::initialsplit(df, prop = 0.8, strata = fail_bin)
 }
 
 # Vascular-Related Dementia
 format_df_vrd <- function(df = df){
-  df %>%
+  df <- df %>%
     mutate(
       exit_date = exit_date_vrd,
       futime = futime_vrd,
@@ -207,10 +208,12 @@ format_df_vrd <- function(df = df){
     filter(
       futime > 0
     )
+  
+  rsample::initialsplit(df, prop = 0.8, strata = fail_bin)
 }
 
 format_df_alldem <- function(df = df){
-  df %>%
+  df <- df %>%
     mutate(
       exit_date = exit_date_alldem,
       futime = futime_alldem,
@@ -219,4 +222,6 @@ format_df_alldem <- function(df = df){
     filter(
       futime > 0
     )
+  
+  rsample::initialsplit(df, prop = 0.8, strata = fail_bin)
 }

@@ -12,19 +12,31 @@ library(patchwork)
 library(broom)
 library(glmnet)
 library(forestplot)
+library(rsample)
 }
 #> -----------------------------
 #> DATA FORMATTING
 #> -----------------------------
-{data <- fread("data/custom_data_1.tsv")
+{
+set.seed(10)
+
+UKB_data <- fread("data/custom_data_1.tsv")
 
 source("R/formatting.R")
 
-df <- format_df(data)
+df <- format_df(UKB_data)
 
-df_ad <- format_df_ad(df)
-df_vd <- format_df_vd(df)
-df_vrd <- format_df_vrd(df)
+ad_split <- format_df_ad(df)
+vd_split <- format_df_vd(df)
+vrd_split <- format_df_vrd(df)
+
+df_ad_train <- train(ad_split)
+df_vd_train <- train(vd_split)
+df_vrd_train <- train(vrd_split)
+
+df_ad_test <- test(ad_split)
+df_vd_test <- test(vd_split)
+df_vrd_test <- test(vrd_split)
 }
 #> -----------------------------
 #> Prepare analysis table
@@ -36,15 +48,23 @@ types_list <- list(
   VRD = "VRD"
 )
 
-data_list <- list(
-  AD = df_ad,
-  VD = df_vd,
-  VRD = df_vrd
+data_train_list <- list(
+  AD_train = df_ad_train,
+  VD_train = df_vd_train,
+  VRD_train = df_vrd_train
+  
+)
+
+data_test_list <- list(
+  AD_test = df_ad_test,
+  VD_test = df_vd_test,
+  VRD_test = df_vrd_test
 )
 
 analysis_tbl <- tibble(
   type = types_list,
-  data = data_list
+  data_train = data_train_list,
+  data_test = data_test_list
 )
 }
 #> -----------------------------
@@ -54,7 +74,7 @@ analysis_tbl <- tibble(
 source("R/plot_forest.R")
 
 analysis_tbl = analysis_tbl %>% 
-  mutate(forest_plot = pmap(list(type, data), ~ 
+  mutate(forest_plot = pmap(list(type, data_train), ~ 
                               plot_forest(..1, ..2)))
 }
 #> -----------------------------
@@ -62,14 +82,14 @@ analysis_tbl = analysis_tbl %>%
 #> -----------------------------
 {analysis_tbl <- analysis_tbl %>%
   mutate(
-    data = map(data, ~ filter(.x, !is.na(sbp),
+    data_train = map(data_train, ~ filter(.x, !is.na(sbp),
                               !is.na(dbp),
                               !is.na(ht))
     )
   )
 analysis_tbl <- analysis_tbl %>% 
   mutate(
-    cox_fit = map(data, ~ coxph(
+    cox_fit = map(data_train, ~ coxph(
       Surv(futime, fail_bin) ~ 
         age_baseline +
         sex + 
@@ -81,7 +101,7 @@ analysis_tbl <- analysis_tbl %>%
         dbp10 +
         sbp10
       ,
-      data = .x
+      data_train = .x
     ))
   )
 
@@ -93,7 +113,7 @@ analysis_tbl %>%
 
 analysis_tbl <- analysis_tbl %>% 
   mutate(
-    cox_fit_new = map(data, ~ coxph(
+    cox_fit_new = map(data_train, ~ coxph(
       Surv(futime, fail_bin) ~ 
         I(age_baseline^2) +
         sex + 
@@ -105,7 +125,7 @@ analysis_tbl <- analysis_tbl %>%
         ht
 
       ,
-      data = .x
+      data_train = .x
     ))
   )
 
@@ -151,7 +171,7 @@ analysis_tbl %>% pull(AIC_test) %>% walk(print)
 
 analysis_tbl <- analysis_tbl %>% 
   mutate(
-    cox_fit_spline = map(data, ~ coxph(
+    cox_fit_spline = map(data_train, ~ coxph(
       Surv(futime, fail_bin) ~ 
         age_baseline +
         sex + 
@@ -163,13 +183,13 @@ analysis_tbl <- analysis_tbl %>%
         dbp10 +
         sbp10
       ,
-      data = .x
+      data_train = .x
     ))
   )
-# Generate reference prediction data
+# Generate reference prediction data_train
 analysis_tbl <- analysis_tbl %>% 
   mutate(
-    pred_df = map(data, ~ tibble(
+    pred_df = map(data_train, ~ tibble(
       prs = mean(.x$prs, na.rm = TRUE),
       sex = 0,
       edu = 0,
@@ -189,7 +209,7 @@ analysis_tbl <- analysis_tbl %>%
 # Produce spline plots
 analysis_tbl <- analysis_tbl %>%
   mutate(
-    spline_plot = pmap(list(type, cox_fit_spline, data, pred_df),
+    spline_plot = pmap(list(type, cox_fit_spline, data_train, pred_df),
                ~ plot_spline(..1, ..2, ..3, ..4, 
                              var = "sbp",
                              save = TRUE))
@@ -201,7 +221,7 @@ analysis_tbl %>% pull(spline_plot) %>% walk(print)
 # # Produce spline plots WITH COMPARISON
 # analysis_tbl <- analysis_tbl %>%
 #   mutate(
-#     spline_plot_vs = pmap(list(type, cox_fit, data, pred_df, cox_fit_new),
+#     spline_plot_vs = pmap(list(type, cox_fit, data_train, pred_df, cox_fit_new),
 #                ~ plot_spline(..1, ..2, ..3, ..4, ..5, 
 #                              var_name = "age_baseline",
 #                              save = FALSE)
@@ -242,7 +262,7 @@ analysis_tbl %>% pull(ph_plot) %>% walk(print)
 {source("R/plot_loglog.R")
 
 analysis_tbl <- analysis_tbl %>%
-  mutate(surv_curvs = pmap(list(type, data), ~ {
+  mutate(surv_curvs = pmap(list(type, data_train), ~ {
     
     # SPECIFY vars of interest -->
     vars = c("sbp", "dbp")
@@ -258,7 +278,7 @@ analysis_tbl %>% pull(surv_curvs) %>% walk(print)
 {
 source("R/plot_lasso.R")
 analysis_tbl <- analysis_tbl %>%
-  mutate(lasoo_plot = pmap(list(type, data), ~ {
+  mutate(lasoo_plot = pmap(list(type, data_train), ~ {
     plot_lasso(..1, ..2)
   }))
 
