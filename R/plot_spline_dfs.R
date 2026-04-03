@@ -1,6 +1,37 @@
+fit_cox_splines <- function(data, vars, var, df = 3) {
+  
+  if (!var %in% vars) {
+    stop("spline_var must be included in vars")
+  }
+  vars <- setdiff(vars, var)
+  
+  if (!is.null(splinemin) & !is.null(splinemax)) {
+    spline_term <- paste0("ns(", spline_var, ", df = ", df,")")
+  } else {
+    spline_term <- paste0("ns(", spline_var, ", df = ", df, ")")
+  }
+  
+  rhs <- paste(c(vars, spline_term), collapse = " + ")
 
-create_pred_df <- funciton(data, var){
-  pred_df <- tibble(
+  formula <- as.formula(
+    paste0("Surv(futime, fail_bin) ~ ", rhs)
+  )
+  
+  fit <- survival::coxph(formula, data = data)
+  return(fit)
+}
+
+
+
+create_pred_df <- function(data, var) {
+  
+  var_seq <- seq(
+    min(data[[var]], na.rm = TRUE),
+    max(data[[var]], na.rm = TRUE),
+    length.out = 200
+  )
+  
+  base_row <- tibble(
     prs = mean(data$prs, na.rm = TRUE),
     sex = 0,
     edu = 0,
@@ -8,87 +39,99 @@ create_pred_df <- funciton(data, var){
     smok_ever = 0,
     alc = 0,
     stroke = 0,
-    
+    ht,
+    is_ih = 0,
+    ihd = 0,
     edu_cont = mean(data$edu_cont, na.rm = TRUE),
     age_baseline = mean(data$age_baseline, na.rm = TRUE),
     dbp10 = mean(data$dbp10, na.rm = TRUE),
     sbp10 = mean(data$sbp10, na.rm = TRUE)
   )
-  pred_df %>% mutate(
-    var = seq(min(data[[var]], na.rm = TRUE),
-          max(data[[var]], na.rm = TRUE),
-          length.out = 200)
+  
+  pred_df <- base_row %>%
+    slice(rep(1, 200)) %>%
+    mutate(!!var := var_seq)
+  
+  return(pred_df)
+}
 
-  )
+plot_spline_dfs <- function(type, data, var, dfmin, dfmax, save = FALSE) {
+  
+  df_seq <- seq(dfmin, dfmax)
+  
+  fits <- pmap(df_seq, function(d) {
+    fit_cox_spline(
+      data = data,
+      vars = vars,
+      var = var,
+      df = d
+    )
+  })
+  
+  pred_df <- create_pred_df(data, var)
+  
+  var = as.character(var)
+  
+  ref_model <- fits[[1]]   # smallest df
+  ref_pred <- predict(ref_model, newdata = pred_df, type = "lp")
+  ref_val <- mean(ref_pred$fit)
+  
+  pred_dfs <- imap(fits, function(fit, name) {
+    pred <- predict(fit, newdata = pred_df, type = "lp", se.fit = TRUE)
+    df_out <- pred_df
+    df_out$hr <- exp(pred$fit - ref_val)
+    df_out$lower <- exp(pred$fit - 1.96*pred$se.fit - ref_val)
+    df_out$upper <- exp(pred$fit + 1.96*pred$se.fit - ref_val)
+    df_out$model <- name
+    df_out
+  })
+  pred_all <- bind_rows(pred_dfs)
+  
+  # Density of chosen variable
+  dens <- density(data[[var]], na.rm = TRUE)
+  dens_df <- data.frame(x = dens$x, y = dens$y)
+  
+  hr_range <- range(pred_all$lower, pred_all$upper)
+  dens_scale <- 0.2 * (hr_range[2] - hr_range[1]) / max(dens_df$y)
+  dens_df$y_scaled <- hr_range[1] + dens_scale * dens_df$y
+  
+  # Plot
+  p <- ggplot(pred_all, aes(x = .data[[var]], y = hr, color = model)) +
+    geom_ribbon(aes(x = .data[[var]], ymin = lower, ymax = upper),
+                alpha = 0.1) +
+    geom_line(linewidth = 1) +
+    geom_line(data = dens_df, 
+              aes(x = x, y = y_scaled), 
+              inherit.aes = FALSE, linewidth = 0.3) +
+    geom_ribbon(data = dens_df,
+              aes(x = x, ymin = hr_range[1], ymax = y_scaled),
+              inherit.aes =  FALSE,
+              fill = "steelblue", alpha = 0.3) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    labs(
+      x = var,
+      y = "Hazard Ratio",
+      title = paste("HR as a function of", var, "for", type)) +
+    theme_minimal() +
+    theme(legend.title = element_blank())
+  
+  if (save == TRUE){
+    
+    filename = glue("multisplineplot_{type}_{var}_{dfmin}{dfmax}.png")
+    path = "figures/splineplot/"
+    
+    print(glue("Saving {filename} into {path}"))
+    
+    ggsave(
+      filename,
+      width = 5, 
+      height = 5, 
+      plot = p,
+      path = path
+    )
+  }
+  
+  return(p)
 }
 
 
-analysis_tbl <- analysis_tbl %>% 
-  mutate(
-    pred_df = map(data, ~ tibble(
-      prs = mean(.x$prs, na.rm = TRUE),
-      sex = 0,
-      edu = 0,
-      gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
-      smok_ever = 0,
-      alc = 0,
-      stroke = 0,
-    
-      edu_cont = mean(.x$edu_cont, na.rm = TRUE),
-      age_baseline = mean(.x$age_baseline, na.rm = TRUE),
-      dbp10 = mean(.x$dbp10, na.rm = TRUE),
-      sbp10 = mean(.x$sbp10, na.rm = TRUE)
-    ))
-  )
-
-
-var = age_baseline
-
-start <- 1
-stop <- 4
-
-vars <- paste0("df", start:stop)
-vars
-spline_tbl <- setNames(as.list(vars), start:stop)
-
-names = c(
-  "age_baseline",
-  "sex",
-  "prs",
-  "gene_apoe",
-  "edu_cont",
-  "smok_ever",
-  "alc",
-  "dbp10",
-  "sbp10")
-
-spline_tbl <- spline_tbl %>% 
-  mutate(
-    cox_fit_spline = map(data, ~ coxph(
-      Surv(futime, fail_bin) ~ 
-        age_baseline +
-        sex + 
-        prs +
-        gene_apoe +
-        smok_ever +
-        alc +
-        edu_cont +
-        dbp10 +
-        sbp10
-      ,
-      data = .x
-    ))
-  )
-# Generate reference prediction data
-
-# Produce spline plots
-analysis_tbl <- analysis_tbl %>%
-  mutate(
-    spline_plot = pmap(list(type, cox_fit_spline, data, pred_df),
-                       ~ plot_spline(..1, ..2, ..3, ..4, 
-                                     var = "sbp",
-                                     save = TRUE))
-  )
-
-# PRINT SPLINE PLOTS
-analysis_tbl %>% pull(spline_plot) %>% walk(print)

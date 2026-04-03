@@ -14,6 +14,7 @@ library(glmnet)
 library(forestplot)
 library(rsample)
 library(riskRegression)
+library(prodlim)
 }
 #> -----------------------------
 #> DATA FORMATTING
@@ -78,6 +79,7 @@ analysis_tbl = analysis_tbl %>%
   mutate(forest_plot = pmap(list(type, data_train), ~ 
                               plot_forest(..1, ..2)))
 }
+
 #> -----------------------------
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
@@ -137,6 +139,17 @@ analysis_tbl %>%
   walk(print)
 }
 #> -----------------------------
+#> fgr test
+#> -----------------------------
+{
+source("R/fgr.R")
+
+analysis_tbl <- analysis_tbl %>%
+  mutate(fgr_fit = pmap(list(type, data_train), ~
+    fgr(..1, ..2)
+  ))
+}
+#> -----------------------------
 #> Anova test
 #> -----------------------------
 {
@@ -168,6 +181,38 @@ analysis_tbl %>% pull(AIC_test) %>% walk(print)
 #> -----------------------------
 #> SPLINES
 #> -----------------------------
+source("R/plot_spline_dfs.R")
+vars <- c(    
+  "prs",
+  "sex",
+  "edu",
+  "gene_apoe",
+  "smok_ever",
+  "alc",
+  "stroke",
+  "edu_cont",
+  "age_baseline",
+  "dbp10",
+  "sbp10",
+  "ht",
+  "is_ih",
+  "ihd"
+)
+
+# IF VARS IS MODIFIED: EDIT create_pred_df() IN R/plot_spline_dfs.R
+
+analysis_tbl <- analysis_tbl %>%
+  mutate(
+    multispline_plot = pmap(
+      list(type, data_train, varname, dfmin, dfmax, save = TRUE), ~
+        plot_spline_dfs(..1, ..2, ..3, ..4, ..5, ..6)
+        )
+  )
+
+
+
+
+
 {source("R/plot_spline.R")
 
 analysis_tbl <- analysis_tbl %>% 
