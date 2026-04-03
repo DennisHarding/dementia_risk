@@ -41,6 +41,9 @@ format_df <- function(data = data){
       vrd_bin = as.numeric(!is.na(vrd_hes)),
       alldem_bin = as.numeric(!is.na(coalesce(age_ad, age_vd, age_vrd))),
       
+      # Sex variable
+      sex = factor(sex),
+      
       # Education variables
       edu = case_when(
         edu_yrs == -3 ~ NA_real_,   # missing code
@@ -101,6 +104,12 @@ format_df <- function(data = data){
         .default = 0
       ) %>%
         as.factor(),
+      ihd = case_when(
+        ihd_hes_df <= entry_date ~ 1,
+        ihd_hes_df > entry_date ~ 0,
+        .default = 0
+      ) %>%
+        as.factor(),
       ht = case_when(
         ht_hes_df <= entry_date ~ 1,
         ht_hes_df > entry_date ~ 0,
@@ -114,12 +123,6 @@ format_df <- function(data = data){
       hf = case_when(
         hf_hes_df <= entry_date ~ 1,
         hf_hes_df > entry_date ~ 0,
-        .default = 0
-      ) %>%
-        as.factor(),
-      ihd = case_when(
-        ihd_hes_df <= entry_date ~ 1,
-        ihd_hes_df > entry_date ~ 0,
         .default = 0
       ) %>%
         as.factor(),

@@ -1,15 +1,11 @@
-fit_cox_splines <- function(data, vars, var, df = 3) {
+fit_cox_spline <- function(data, vars, var, df = 3) {
   
   if (!var %in% vars) {
-    stop("spline_var must be included in vars")
+    stop("var must be included in vars")
   }
   vars <- setdiff(vars, var)
-  
-  if (!is.null(splinemin) & !is.null(splinemax)) {
-    spline_term <- paste0("ns(", spline_var, ", df = ", df,")")
-  } else {
-    spline_term <- paste0("ns(", spline_var, ", df = ", df, ")")
-  }
+
+  spline_term <- paste0("ns(", var, ", df = ", df,")")
   
   rhs <- paste(c(vars, spline_term), collapse = " + ")
 
@@ -33,15 +29,13 @@ create_pred_df <- function(data, var) {
   
   base_row <- tibble(
     prs = mean(data$prs, na.rm = TRUE),
-    sex = 0,
-    edu = 0,
+    sex = factor(0, levels = levels(data$sex)),
     gene_apoe = factor("e33", levels = levels(data$gene_apoe)),
-    smok_ever = 0,
-    alc = 0,
-    stroke = 0,
-    ht,
-    is_ih = 0,
-    ihd = 0,
+    smok_ever = factor(0, levels = levels(data$smok_ever)),
+    alc = factor(0, levels = levels(data$alc)),
+    ht = factor(0, levels = levels(data$ht)),
+    is_ih = factor(0, levels = levels(data$is_ih)),
+    ihd = factor(0, levels = levels(data$ihd)),
     edu_cont = mean(data$edu_cont, na.rm = TRUE),
     age_baseline = mean(data$age_baseline, na.rm = TRUE),
     dbp10 = mean(data$dbp10, na.rm = TRUE),
@@ -55,11 +49,11 @@ create_pred_df <- function(data, var) {
   return(pred_df)
 }
 
-plot_spline_dfs <- function(type, data, var, dfmin, dfmax, save = FALSE) {
+plot_spline_dfs <- function(type, data, vars, var, dfmin, dfmax, save = FALSE) {
   
   df_seq <- seq(dfmin, dfmax)
   
-  fits <- pmap(df_seq, function(d) {
+  fits <- map(df_seq, function(d) {
     fit_cox_spline(
       data = data,
       vars = vars,
@@ -68,13 +62,16 @@ plot_spline_dfs <- function(type, data, var, dfmin, dfmax, save = FALSE) {
     )
   })
   
+  names(fits) <- paste0("df", df_seq)
+  
   pred_df <- create_pred_df(data, var)
   
   var = as.character(var)
   
   ref_model <- fits[[1]]   # smallest df
   ref_pred <- predict(ref_model, newdata = pred_df, type = "lp")
-  ref_val <- mean(ref_pred$fit)
+  ref_val <- mean(ref_pred)
+  
   
   pred_dfs <- imap(fits, function(fit, name) {
     pred <- predict(fit, newdata = pred_df, type = "lp", se.fit = TRUE)
@@ -97,7 +94,7 @@ plot_spline_dfs <- function(type, data, var, dfmin, dfmax, save = FALSE) {
   
   # Plot
   p <- ggplot(pred_all, aes(x = .data[[var]], y = hr, color = model)) +
-    geom_ribbon(aes(x = .data[[var]], ymin = lower, ymax = upper),
+    geom_ribbon(aes(ymin = lower, ymax = upper),
                 alpha = 0.1) +
     geom_line(linewidth = 1) +
     geom_line(data = dens_df, 

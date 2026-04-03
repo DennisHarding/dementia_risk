@@ -15,6 +15,7 @@ library(forestplot)
 library(rsample)
 library(riskRegression)
 library(prodlim)
+library(splines)
 }
 #> -----------------------------
 #> DATA FORMATTING
@@ -94,17 +95,20 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     cox_fit = map(data_train, ~ coxph(
       Surv(futime, fail_bin) ~ 
-        age_baseline +
-        sex + 
         prs +
+        sex + 
         gene_apoe +
-        edu_cont +
         smok_ever +
         alc +
+        edu_cont +
+        age_baseline +
         dbp10 +
-        sbp10
+        sbp10 +
+        ht +
+        ihd +
+        is_ih
       ,
-      data_train = .x
+      data = .x
     ))
   )
 
@@ -185,11 +189,9 @@ source("R/plot_spline_dfs.R")
 vars <- c(    
   "prs",
   "sex",
-  "edu",
   "gene_apoe",
   "smok_ever",
   "alc",
-  "stroke",
   "edu_cont",
   "age_baseline",
   "dbp10",
@@ -204,16 +206,18 @@ vars <- c(
 analysis_tbl <- analysis_tbl %>%
   mutate(
     multispline_plot = pmap(
-      list(type, data_train, varname, dfmin, dfmax, save = TRUE), ~
-        plot_spline_dfs(..1, ..2, ..3, ..4, ..5, ..6)
+      list(type, data_train), ~
+        plot_spline_dfs(..1, ..2, vars, "edu_cont", 1, 3, save = TRUE)
         )
   )
 
+str(analysis_tbl$type)
+str(analysis_tbl$data_train)
 
 
 
-
-{source("R/plot_spline.R")
+{
+source("R/plot_spline.R")
 
 analysis_tbl <- analysis_tbl %>% 
   mutate(
@@ -229,7 +233,7 @@ analysis_tbl <- analysis_tbl %>%
         dbp10 +
         sbp10
       ,
-      data_train = .x
+      data = .x
     ))
   )
 # Generate reference prediction data_train
@@ -237,16 +241,16 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     pred_df = map(data_train, ~ tibble(
       prs = mean(.x$prs, na.rm = TRUE),
-      sex = 0,
-      edu = 0,
+      sex = as.factor(0),
+      edu = as.factor(0),
       gene_apoe = factor("e33", levels = levels(.x$gene_apoe)),
-      smok_ever = 0,
-      alc = 0,
+      smok_ever = as.factor(0),
+      alc = as.factor(0),
       edu_cont = mean(.x$edu_cont, na.rm = TRUE),
-      stroke = 0,
+      stroke = as.factor(0),
       age_baseline = mean(.x$age_baseline, na.rm = TRUE),
-      dbp = 0,
-      sbp = seq(min(.x$sbp, na.rm = TRUE),
+      dbp10 = as.factor(0),
+      sbp10 = seq(min(.x$sbp, na.rm = TRUE),
                 max(.x$sbp, na.rm = TRUE),
                 length.out = 200)
     ))
@@ -257,7 +261,7 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     spline_plot = pmap(list(type, cox_fit_spline, data_train, pred_df),
                ~ plot_spline(..1, ..2, ..3, ..4, 
-                             var = "sbp",
+                             var = "sbp10",
                              save = TRUE))
   )
 
