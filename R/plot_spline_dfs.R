@@ -94,9 +94,9 @@ plot_spline_dfs <- function(type, data, vars, var, dfmin, dfmax, save = FALSE) {
   
   # Plot
   p <- ggplot(pred_all, aes(x = .data[[var]], y = hr, color = model)) +
-    geom_ribbon(aes(ymin = lower, ymax = upper),
-                alpha = 0.1) +
-    geom_line(linewidth = 1) +
+    geom_ribbon(linetype = "dashed", linewidth = 0.5, aes(ymin = lower, ymax = upper),
+                alpha = 0.05) +
+    geom_line(linewidth = 0.7) +
     geom_line(data = dens_df, 
               aes(x = x, y = y_scaled), 
               inherit.aes = FALSE, linewidth = 0.3) +
