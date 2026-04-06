@@ -76,9 +76,9 @@ plot_spline_dfs <- function(type, data, vars, var, dfmin, dfmax, save = FALSE) {
   pred_dfs <- imap(fits, function(fit, name) {
     pred <- predict(fit, newdata = pred_df, type = "lp", se.fit = TRUE)
     df_out <- pred_df
-    df_out$hr <- exp(pred$fit - ref_val)
-    df_out$lower <- exp(pred$fit - 1.96*pred$se.fit - ref_val)
-    df_out$upper <- exp(pred$fit + 1.96*pred$se.fit - ref_val)
+    df_out$hr <- pred$fit - ref_val
+    df_out$lower <- pred$fit - 1.96*pred$se.fit - ref_val
+    df_out$upper <- pred$fit + 1.96*pred$se.fit - ref_val
     df_out$model <- name
     df_out
   })
@@ -107,8 +107,8 @@ plot_spline_dfs <- function(type, data, vars, var, dfmin, dfmax, save = FALSE) {
     geom_hline(yintercept = 1, linetype = "dashed") +
     labs(
       x = var,
-      y = "Hazard Ratio",
-      title = paste("HR as a function of", var, "for", type)) +
+      y = "log Hazard Ratio",
+      title = paste("log HR as a function of", var, "for", type)) +
     theme_minimal() +
     theme(legend.title = element_blank())
   

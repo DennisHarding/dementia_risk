@@ -186,7 +186,8 @@ analysis_tbl %>% pull(AIC_test) %>% walk(print)
 #> -----------------------------
 #> SPLINES
 #> -----------------------------
-{source("R/plot_spline_dfs.R")
+{
+source("R/plot_spline_dfs.R")
 vars <- c(    
   "prs",
   "sex",
@@ -208,7 +209,7 @@ analysis_tbl <- analysis_tbl %>%
   mutate(
     multispline_plot = pmap(
       list(type, data_train), ~
-        plot_spline_dfs(..1, ..2, vars, "edu_cont", 1, 3, save = TRUE)
+        plot_spline_dfs(..1, ..2, vars, "age_baseline", 1, 3, save = TRUE)
         )
   )
 
