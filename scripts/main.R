@@ -316,9 +316,9 @@ analysis_tbl <- analysis_tbl %>%
   mutate(surv_curvs = pmap(list(type, data_train), ~ {
     
     # SPECIFY vars of interest -->
-    vars = c("sbp", "dbp")
+    vars = c("ht", "ihd", "sex")
     
-    plot_loglog(..1, ..2, vars, save = FALSE)
+    plot_loglog(..1, ..2, vars, save = TRUE)
   }))
 
 analysis_tbl %>% pull(surv_curvs) %>% walk(print)

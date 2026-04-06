@@ -1,5 +1,5 @@
 plot_loglog <- function(type, data, vars, save = FALSE){
-  map(vars, function(var){
+  plots <- map(vars, function(var){
     
     formula <- as.formula(paste("Surv(futime, event = fail_bin) ~", var))
     
@@ -24,22 +24,25 @@ plot_loglog <- function(type, data, vars, save = FALSE){
                linewidth = 0.5
               )
     
-    if (save == TRUE){
-      
-      filename = glue("loglogplot_{type}_{var}.png")
-      path = "figures/loglogplot/"
-      
-      print(glue("Saving {filename} into {path}"))
-      
-      ggsave(
-        filename,
-        width = 5, 
-        height = 5, 
-        plot = p$plot,
-        path = path
-      )
-    }
-    
-    p
+    p$plot
   })
+  
+  combined <- wrap_plots(plots, ncol = 3)
+  
+  if (save == TRUE){
+    vars_str <- paste0(vars, collapse = "_")
+    filename = glue("loglogplot_{type}_{vars_str}.png")
+    path = "figures/loglogplot/"
+    
+    print(glue("Saving {filename} into {path}"))
+    
+    ggsave(
+      filename,
+      width = 15, 
+      height = 5, 
+      plot = combined,
+      path = path
+    )
+  }
+  combined
 }
