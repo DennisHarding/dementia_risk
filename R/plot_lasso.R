@@ -1,40 +1,23 @@
-cox_selected <- list("AD" = c("age_baseline", "sex"),
-                     "VD" = c("alldm", "is_ih"),
-                     "VRD" = c("alldm", "is_ih", "ht"))
-legends <- list(
-  "gene_apoe_level" = "ApoE Genotype",
-  "prs_level" = "Polygenetic Risk Score",
-  "sex" = "Sex", 
-  "alldm" = "Diabetes", 
-  "smok_ever" = "Smoking", 
-  "edu" = "Education", 
-  "alc" = "Alcohol intake", 
-  "is_ih" = "is_ih Stroke",
-  "ht" = "Hypertension", 
-  "dbp" = "Diastolic BP 10",
-  "sbp" = "Systolic BP 10",
-  "ihd" = "Ischemic Heart Disease",
-  "prs_fac" = "Polygenetic Risk Score",
-  "age_baseline" = "Age"
+plot_lasso <- function(type, data, lasso_vars, lasso_selected){
+  legends <- list(
+    "gene_apoe_level" = "ApoE Genotype",
+    "prs_level" = "Polygenetic Risk Score",
+    "sex" = "Sex", 
+    "alldm" = "Diabetes", 
+    "smok_ever" = "Smoking", 
+    "edu" = "Education", 
+    "alc" = "Alcohol intake", 
+    "is_ih" = "is_ih Stroke",
+    "ht" = "Hypertension", 
+    "dbp" = "Diastolic BP 10",
+    "sbp" = "Systolic BP 10",
+    "ihd" = "Ischemic Heart Disease",
+    "prs_fac" = "Polygenetic Risk Score",
+    "age_baseline" = "Age"
   )
-#plot_lasso <- function(type, data){
-data <- df_ad
-type = "AD"
-
+  
   X <- data %>%
-    select(c("age_baseline", 
-             "prs_level", 
-             "sex", 
-             "gene_apoe_level", 
-             "alldm", 
-             "smok_ever", 
-             "ht", 
-             "edu", 
-             "alc", 
-             "is_ih", 
-             "ihd", 
-             "dbp10", 
-             "sbp10"))
+    select(all_of(lasso_vars))
   y <- Surv(data$futime, event = data$fail_bin)
   complete_cases <- complete.cases(X, y)
   X_clean <- model.matrix(~ ., data = X[complete_cases, ])[,-1]

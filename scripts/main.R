@@ -84,6 +84,7 @@ analysis_tbl = analysis_tbl %>%
 #> -----------------------------
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
+
 {analysis_tbl <- analysis_tbl %>%
   mutate(
     data_train = map(data_train, ~ filter(.x, !is.na(sbp),
@@ -185,7 +186,7 @@ analysis_tbl %>% pull(AIC_test) %>% walk(print)
 #> -----------------------------
 #> SPLINES
 #> -----------------------------
-source("R/plot_spline_dfs.R")
+{source("R/plot_spline_dfs.R")
 vars <- c(    
   "prs",
   "sex",
@@ -211,10 +212,7 @@ analysis_tbl <- analysis_tbl %>%
         )
   )
 
-str(analysis_tbl$type)
-str(analysis_tbl$data_train)
-
-
+}
 
 {
 source("R/plot_spline.R")
@@ -327,9 +325,28 @@ analysis_tbl %>% pull(surv_curvs) %>% walk(print)
 #> -----------------------------
 {
 source("R/plot_lasso.R")
+
+lasso_vars <- c("age_baseline", 
+          "prs_level", 
+          "sex", 
+          "gene_apoe_level", 
+          "alldm", 
+          "smok_ever", 
+          "ht", 
+          "edu", 
+          "alc", 
+          "is_ih", 
+          "ihd", 
+          "dbp10", 
+          "sbp10")
+
+lasso_selected <- list("AD" = c("age_baseline", "sex"),
+                     "VD" = c("alldm", "is_ih"),
+                     "VRD" = c("alldm", "is_ih", "ht"))
+
 analysis_tbl <- analysis_tbl %>%
   mutate(lasoo_plot = pmap(list(type, data_train), ~ {
-    plot_lasso(..1, ..2)
+    plot_lasso(..1, ..2, lasso_vars, cox_selected)
   }))
 
 }
