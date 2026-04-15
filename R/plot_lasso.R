@@ -22,6 +22,23 @@ plot_lasso <- function(type, data, lasso_vars, lasso_selected){
   complete_cases <- complete.cases(X, y)
   X_clean <- model.matrix(~ ., data = X[complete_cases, ])[,-1]
   y_clean <- y[complete_cases]
+  
+  
+  cvfit <- cv.glmnet(X_clean, y_clean, family = "cox", nfolds = 10)
+  
+  png(glue("figures/lasso/lasso_CV_{type}.png"), 
+      width=12, height=6, 
+      units="in", 
+      res=300)
+  
+  par(mar = c(5, 5, 5, 2))
+  plot(cvfit)
+  title(main = glue("Cox Lasso CV - {type}"),
+        cex.main = 2,
+        line = 2.7)
+  
+  dev.off()
+  
   fit <- glmnet(x = X_clean, y = y_clean, family = "cox", alpha = 1) 
   
   lambda_seq <- fit$lambda
@@ -47,7 +64,7 @@ plot_lasso <- function(type, data, lasso_vars, lasso_selected){
       lambda = lambda_seq[lambda_index],
       log_lambda = log(lambda)
     ) %>%
-    filter((str_detect(variable, str_c(cox_selected[[type]], collapse = "|"))) | 
+    filter((str_detect(variable, str_c(lasso_selected[[type]], collapse = "|"))) | 
              (str_detect(variable, "^gene")|str_detect(variable, "^prs")))
   long_wo_gen <- coef_df %>%
     pivot_longer(
@@ -87,6 +104,15 @@ plot_lasso <- function(type, data, lasso_vars, lasso_selected){
     lines(subdf$log_lambda, subdf$coefficient, col = rainbow(length(vars))[i])
   }
   
+  abline(v = log(cvfit$lambda.min), lty = 2, col = "black")
+  abline(v = log(cvfit$lambda.1se), lty = 2, col = "gray50")
+  
+  axis(3, 
+       at = c(log(cvfit$lambda.min), log(cvfit$lambda.1se)),
+       labels = c("λ.min", "λ.1se"), 
+       tick = FALSE, 
+       cex.axis = 0.8,
+       line = -2)
   
   title(main = glue("Lasso Genetic Coefficient Paths - {type}"),
         cex.main = 2)
@@ -124,6 +150,17 @@ plot_lasso <- function(type, data, lasso_vars, lasso_selected){
     lines(subdf$log_lambda, subdf$coefficient, col = rainbow(length(vars))[i])
   }
   
+  abline(v = log(cvfit$lambda.min), lty = 2, col = "black")
+  abline(v = log(cvfit$lambda.1se), lty = 2, col = "gray50")
+  
+  axis(3, 
+       at = c(log(cvfit$lambda.min), log(cvfit$lambda.1se)),
+       labels = c("λ.min", "λ.1se"), 
+       tick = FALSE, 
+       cex.axis = 0.8,
+       line = -2)
+  
+  
   title(main = glue("Lasso Coefficient Paths - {type}"),
         cex.main = 2)
   
@@ -135,21 +172,5 @@ plot_lasso <- function(type, data, lasso_vars, lasso_selected){
          col = rainbow(length(vars))[seq_along(vars)], 
          lty = 1)
   dev.off()
-  
-  cvfit <- cv.glmnet(X_clean, y_clean, family = "cox")
-  png(glue("figures/lasso/Lasso_CV_{type}.png"), 
-      width=12, 
-      height=6, 
-      units="in", 
-      res=300)
-  par(mar = c(5, 5, 5, 2))
-  plot(cvfit)
-  title(main = glue("Cox Lasso CV - {type}"),
-        cex.main = 2,
-        line = 2.7)
-  dev.off()
-  
-  coef(cvfit, s = "lambda.1se")
-  coef(cvfit, s = "lambda.min")
 }
 

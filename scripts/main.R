@@ -344,12 +344,12 @@ lasso_vars <- c("age_baseline",
           "sbp10")
 
 lasso_selected <- list("AD" = c("age_baseline", "sex"),
-                     "VD" = c("alldm", "is_ih"),
-                     "VRD" = c("alldm", "is_ih", "ht"))
+                     "VD" = c("age_baseline", "sex"),
+                     "VRD" = c("age_baseline", "sex"))
 
 analysis_tbl <- analysis_tbl %>%
   mutate(lasoo_plot = pmap(list(type, data_train), ~ {
-    plot_lasso(..1, ..2, lasso_vars, cox_selected)
+    plot_lasso(..1, ..2, lasso_vars, lasso_selected)
   }))
 
 }

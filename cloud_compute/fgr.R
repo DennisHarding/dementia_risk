@@ -13,7 +13,7 @@ fgr <- function(type, data){
   fit_fgr <- FGR(formula = formula, data = df_train_fgr, cause = 1)
   print(warnings())
   print(glue("FGR for {type} Fitted"))
-  saveRDS(fit_fgr, glue("fits/{type}_fgr.rds"))
+  saveRDS(fit_fgr, glue("{type}_fgr.rds"))
   print(summary(fit_fgr))
   fit_fgr
 }
