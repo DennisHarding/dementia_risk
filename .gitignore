@@ -23,6 +23,10 @@ data/
 *.rds
 *.parquet
 
+# Fitted models
+fits/
+*.rds
+
 # credentials
 *.key
 *.pem

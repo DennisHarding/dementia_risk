@@ -16,6 +16,7 @@ library(rsample)
 library(riskRegression)
 library(prodlim)
 library(splines)
+library(furrr)
 }
 #> -----------------------------
 #> DATA FORMATTING
@@ -148,10 +149,18 @@ analysis_tbl %>%
 #> -----------------------------
 {
 source("R/fgr.R")
+all_deps <- tools::package_dependencies("riskRegression", recursive = TRUE)$riskRegression
+
+plan(multisession, workers = 3)
 
 analysis_tbl <- analysis_tbl %>%
-  mutate(fgr_fit = pmap(list(type, data_train), ~
-    fgr(..1, ..2)
+  mutate(fgr_fit = future_pmap(
+    list(type, data_train),
+    ~ fgr(..1, ..2),
+    .options = furrr_options(
+      packages = c("Matrix", "riskRegression", all_deps),
+      seed = TRUE
+    )
   ))
 }
 #> -----------------------------
