@@ -48,87 +48,80 @@ create_pred_df <- function(data, var) {
   
   return(pred_df)
 }
-
 plot_spline_dfs <- function(type, data, vars, var, dfmin, dfmax, save = FALSE) {
   
   df_seq <- seq(dfmin, dfmax)
   
   fits <- map(df_seq, function(d) {
-    fit_cox_spline(
-      data = data,
-      vars = vars,
-      var = var,
-      df = d
-    )
+    fit_cox_spline(data = data, vars = vars, var = var, df = d)
   })
   
+  # Build named labels with AIC
+  aic_vals <- map_dbl(fits, AIC)
+  aic_diff <- aic_vals - mean(aic_vals)
+  aic_str <- formatC(aic_diff, format = "f", digits = 1, flag = "+")
+  model_labels <- paste0("df", df_seq, "  (AIC: ", aic_str, ")")
   names(fits) <- paste0("df", df_seq)
   
   pred_df <- create_pred_df(data, var)
+  var <- as.character(var)
   
-  var = as.character(var)
-  
-  ref_model <- fits[[1]]   # smallest df
+  ref_model <- fits[[1]]
   ref_pred <- predict(ref_model, newdata = pred_df, type = "lp")
   ref_val <- mean(ref_pred)
-  
   
   pred_dfs <- imap(fits, function(fit, name) {
     pred <- predict(fit, newdata = pred_df, type = "lp", se.fit = TRUE)
     df_out <- pred_df
     df_out$hr <- pred$fit - ref_val
-    df_out$lower <- pred$fit - 1.96*pred$se.fit - ref_val
-    df_out$upper <- pred$fit + 1.96*pred$se.fit - ref_val
+    df_out$lower <- pred$fit - 1.96 * pred$se.fit - ref_val
+    df_out$upper <- pred$fit + 1.96 * pred$se.fit - ref_val
     df_out$model <- name
     df_out
   })
   pred_all <- bind_rows(pred_dfs)
   
-  # Density of chosen variable
+  # Map df labels to AIC labels for the legend
+  label_map <- setNames(model_labels, paste0("df", df_seq))
+  pred_all$model_label <- label_map[pred_all$model]
+  pred_all$model_label <- factor(pred_all$model_label, levels = model_labels)
+  
+  # Density
   dens <- density(data[[var]], na.rm = TRUE)
   dens_df <- data.frame(x = dens$x, y = dens$y)
-  
   hr_range <- range(pred_all$lower, pred_all$upper)
   dens_scale <- 0.2 * (hr_range[2] - hr_range[1]) / max(dens_df$y)
   dens_df$y_scaled <- hr_range[1] + dens_scale * dens_df$y
   
   # Plot
-  p <- ggplot(pred_all, aes(x = .data[[var]], y = hr, color = model)) +
-    geom_ribbon(linetype = "dashed", linewidth = 0.25, aes(ymin = lower, ymax = upper),
-                alpha = 0.05) +
+  p <- ggplot(pred_all, aes(x = .data[[var]], y = hr, color = model_label)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = model_label),
+                linetype = "dashed", linewidth = 0.25, alpha = 0.05) +
     geom_line(linewidth = 0.7) +
-    geom_line(data = dens_df, 
-              aes(x = x, y = y_scaled), 
+    geom_line(data = dens_df,
+              aes(x = x, y = y_scaled),
               inherit.aes = FALSE, linewidth = 0.3) +
     geom_ribbon(data = dens_df,
-              aes(x = x, ymin = hr_range[1], ymax = y_scaled),
-              inherit.aes =  FALSE,
-              fill = "steelblue", alpha = 0.3) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
+                aes(x = x, ymin = hr_range[1], ymax = y_scaled),
+                inherit.aes = FALSE,
+                fill = "steelblue", alpha = 0.3) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
     labs(
       x = var,
       y = "log Hazard Ratio",
-      title = paste("log HR as a function of", var, "for", type)) +
+      title = paste("log HR as a function of", var, "for", type),
+      color = "Model (AIC)",
+      fill = "Model (AIC)"
+    ) +
     theme_minimal() +
     theme(legend.title = element_blank())
   
-  if (save == TRUE){
-    
-    filename = glue("multisplineplot_{type}_{var}_{dfmin}{dfmax}.png")
-    path = "figures/splineplot/"
-    
+  if (save == TRUE) {
+    filename <- glue("multisplineplot_{type}_{var}_{dfmin}{dfmax}.png")
+    path <- "figures/splineplot/"
     print(glue("Saving {filename} into {path}"))
-    
-    ggsave(
-      filename,
-      width = 5, 
-      height = 5, 
-      plot = p,
-      path = path
-    )
+    ggsave(filename, width = 5, height = 5, plot = p, path = path)
   }
   
   return(p)
 }
-
-

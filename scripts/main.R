@@ -197,7 +197,7 @@ analysis_tbl %>% pull(AIC_test) %>% walk(print)
 #> -----------------------------
 {
 source("R/plot_spline_dfs.R")
-spline_var <- "sbp10"
+spline_var <- "age_baseline"
   
 spline_vars <- c(    
   "prs", # continuous
