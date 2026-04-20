@@ -25,6 +25,10 @@ format_df <- function(data = data){
       
       # Follow-up time (years)
       age_baseline = as.numeric(difftime(entry_date, birth_date, unit = "days")) / 365.25,
+      age_gr = cut(age_baseline, 
+                   breaks = c(40,50,60,70,80),
+                   labels = c("40-50", "50-60", "60-70","70-80")) %>%
+        as.factor(),
       futime_ad = as.numeric(difftime(exit_date_ad, entry_date, unit = "days")) / 365.25,
       futime_vd = as.numeric(difftime(exit_date_vd, entry_date, unit = "days")) / 365.25,
       futime_vrd = as.numeric(difftime(exit_date_vrd, entry_date, unit = "days")) / 365.25,

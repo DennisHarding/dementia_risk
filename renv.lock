@@ -2596,7 +2596,7 @@
     },
     "fs": {
       "Package": "fs",
-      "Version": "2.0.1",
+      "Version": "2.1.0",
       "Source": "Repository",
       "Title": "Cross-Platform File System Operations Based on 'libuv'",
       "Authors@R": "c( person(\"Jim\", \"Hester\", role = \"aut\"), person(\"Hadley\", \"Wickham\", role = \"aut\"), person(\"Gábor\", \"Csárdi\", role = \"aut\"), person(\"Jeroen\", \"Ooms\", , \"jeroenooms@gmail.com\", role = \"cre\"), person(\"libuv project contributors\", role = \"cph\", comment = \"libuv library\"), person(\"Joyent, Inc. and other Node contributors\", role = \"cph\", comment = \"libuv library\"), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"), comment = c(ROR = \"03wc8by49\")) )",
@@ -5116,6 +5116,41 @@
       "LazyData": "true",
       "NeedsCompilation": "no",
       "Author": "Ulrich Halekoh [aut, cph], Søren Højsgaard [aut, cre, cph]",
+      "Repository": "CRAN"
+    },
+    "pec": {
+      "Package": "pec",
+      "Version": "2025.06.24",
+      "Source": "Repository",
+      "Title": "Prediction Error Curves for Risk Prediction Models in Survival Analysis",
+      "Authors@R": "person(given = c(\"Thomas\", \"A.\"), family = \"Gerds\", role = c(\"aut\", \"cre\"), email = \"tag@biostat.ku.dk\")",
+      "Description": "Validation of risk predictions obtained from survival models and competing risk models based on censored data using inverse weighting and cross-validation. Most of the 'pec' functionality has been moved to 'riskRegression'.",
+      "Depends": [
+        "R (>= 2.9.0)",
+        "prodlim (>= 1.4.9)"
+      ],
+      "Imports": [
+        "foreach (>= 1.4.2)",
+        "rms (>= 4.2-0)",
+        "survival (>= 2.37-7)",
+        "riskRegression (>= 2020.02.05)",
+        "lava (>= 1.4.1)",
+        "timereg (>= 1.8.9)"
+      ],
+      "Suggests": [
+        "party",
+        "cmprsk (>= 2.2-7)",
+        "rpart",
+        "Hmisc (>= 3.14-4)"
+      ],
+      "Enhances": [
+        "randomForestSRC"
+      ],
+      "Maintainer": "Thomas A. Gerds <tag@biostat.ku.dk>",
+      "License": "GPL (>= 2)",
+      "RoxygenNote": "7.3.2",
+      "NeedsCompilation": "yes",
+      "Author": "Thomas A. Gerds [aut, cre]",
       "Repository": "CRAN"
     },
     "pillar": {

@@ -145,8 +145,22 @@ analysis_tbl %>%
   walk(print)
 }
 #> -----------------------------
-#> fgr test
+#> fgr run 
 #> -----------------------------
+
+cox_selected <- list("AD" = c("age_gr", "sex", "prs_fac", "gene_apoe", "edu"),
+                     "VD" = c("age_gr", "sex", "prs_fac", "gene_apoe", "alldm", "is_ih", "ihd", "ht"),
+                     "VRD" = c("age_gr", "sex", "prs_fac", "gene_apoe", "edu", "alldm", "ihd", "ht"))
+
+formula <- as.formula(paste0("Hist(futime, fail_cr) ~ ", paste0(cox_selected[["AD"]], collapse = " + ")))
+fit_fgr <- FGR(formula = formula, data = df_ad_train, cause = 1)
+saveRDS(fit_fgr, glue("fits/{type}_fgr.rds"))
+fit_fgr
+df %>% 
+  select(cox_selected[["AD"]]) %>% 
+  mutate(across(everything(), as.numeric)) %>% 
+  cor(use = "complete.obs")
+
 {
 source("R/fgr.R")
 all_deps <- tools::package_dependencies("riskRegression", recursive = TRUE)$riskRegression
@@ -158,11 +172,306 @@ analysis_tbl <- analysis_tbl %>%
     list(type, data_train),
     ~ fgr(..1, ..2),
     .options = furrr_options(
-      packages = c("Matrix", "riskRegression", all_deps),
+      packages = c("Matrix", "riskRegression", all_deps, "rsample", "glue", "dplyr"),
       seed = TRUE
     )
   ))
 }
+#> -----------------------------
+#> Risk Charts
+#> -----------------------------
+
+AD.fit <- readRDS("fits/AD_fgr.rds")
+summary(AD.fit)
+
+VD.fit <- readRDS("fits/VD_fgr.rds")
+summary(VD.fit)
+
+VRD.fit <- readRDS("fits/VRD_fgr.rds")
+summary(VRD.fit)
+
+
+## 10 year Risk estimates
+
+# r setup and compute 10 year risk estimates
+# Setup array for results
+
+# loop - sex
+# loop - age_group
+# loop - APOE_genotype
+# loop - prs_fac
+# loop - Diabetes status
+# loop - Smoking_n_e
+# loop - Education_gr
+
+sex <- c(0,1)
+age_gr <- c(0,1,2,3,4)
+apoe <- relevel(as.factor(c("e33","e22","e32","e42","e43","e44")),ref="e33")
+prs_fac <- c(1,2,3,4,5)
+dm <- c(0,1)
+ihd <- c(0,1)
+is_ih <- c(0,1)
+ht <- c(0,1)
+smoker <- c(0,1)
+edu <- c(0,1)
+
+m1 <- CJ(sex,age_gr,apoe,prs_fac,dm,ihd,is_ih,ht,smoker,edu)
+
+m1$sex <- as.factor(m1$sex)
+m1$age_gr <- as.factor(m1$age_gr)
+m1$prs_fac <- as.factor(m1$prs_fac)
+m1$dm <- as.factor(m1$dm)
+m1$ihd <- as.factor(m1$ihd)
+m1$is_ih <- as.factor(m1$is_ih)
+m1$ht <- as.factor(m1$ht)
+m1$smoker<- as.factor(m1$smoker)
+m1$edu<- as.factor(m1$edu)
+
+rm(sex,age_gr,apoe,prs_fac,dm,ihd,is_ih,ht,smoker,edu)
+
+# Risk prediction times 5,10,15,20 years
+
+pred_ad <- as.data.frame(predictEventProb(AD.fit,times=c(5,10,15,20),newdata=m1,cause=1))
+colnames(pred_ad) <- c("ad_pred_05","ad_pred_10","ad_pred_15","ad_pred_20")
+
+pred_vd <- as.data.frame(predictEventProb(VD.fit,times=c(5,10,15,20),newdata=m1,cause=1))
+colnames(pred_vd) <- c("vd_pred_05","vd_pred_10","vd_pred_15","vd_pred_20")
+
+pred_vrd <- as.data.frame(predictEventProb(VRD.fit,times=c(5,10,15,20),newdata=m1,cause=1))
+colnames(pred_vrd) <- c("vrd_pred_05","vrd_pred_10","vrd_pred_15","vrd_pred_20")
+
+
+
+ad_df <- cbind(m1,pred_ad)
+vd_df <- cbind(m1,pred_vd)
+vrd_df <- cbind(m1,pred_vrd)
+
+rm(pred_ad,pred_vd,pred_vrd,m1)
+
+# Set up variables for risk plots
+
+age_gr.labs <- c("50-59", "60-69", "70-79",">80")
+names(age_gr.labs) <- c("1", "2", "3","4")
+
+smoker.labs <- c("No smoking", "Smoking")
+names(smoker.labs) <- c("0", "1")
+
+edu.labs <- c("Education <8y", "Education >8y")
+names(edu.labs) <- c("1", "0")
+
+dm.labs <- c("No diabetes", "Diabetes")
+names(dm.labs) <- c("0", "1")
+
+cols <- c("0"="#00994C","1"="#66CC00","2"="#FFFF33" ,"3"="#FF9933", "4"="#FF0000","5"="#CC0000","6"="#994C00")
+
+# adheimer's disease risk charts
+
+ad_df <- ad_df %>% mutate(apoe_s = case_when(
+  apoe == "e22" ~ 1,
+  apoe == "e32" ~ 2,
+  apoe == "e33" ~ 3,
+  apoe == "e42" ~ 4,
+  apoe == "e43" ~ 5,
+  apoe == "e44" ~ 6)
+)
+
+ad_df$apoe_s<- as.factor(ad_df$apoe_s)
+
+ad_df <- ad_df %>% mutate(col = case_when(
+  ad_pred_10 < 0.01 ~ "0",
+  ad_pred_10 >= 0.01 & ad_pred_10 < 0.05 ~ "1",
+  ad_pred_10 >= 0.05 & ad_pred_10 < 0.10 ~ "2",
+  ad_pred_10 >= 0.10 & ad_pred_10 < 0.15 ~ "3",
+  ad_pred_10 >= 0.15 & ad_pred_10 < 0.20 ~ "4",
+  ad_pred_10 >= 0.20 & ad_pred_10 < 0.30 ~ "5",
+  ad_pred_10 >= 0.30 ~ "6")
+)
+
+# order age_gr for plot 
+summary(ad_df$age_gr)
+ad_df$age_gr <- factor(ad_df$age_gr, levels = c(4, 3, 2, 1,0))
+
+
+for (i in 0:1) {
+  for (j in 0:1) {
+    
+    pd_ad <- ad_df[sex==i & edu==j & age_gr != 0,]
+    
+    titlename <- paste0(cohortname," - adheimer 10 year absolute risk - sex=" ,i, " edu=" ,j)
+    
+    ggplot(pd_ad,aes(x = apoe_s, y = was2022_gr, fill = col))  +
+      geom_tile() +
+      geom_text(aes(label = lapply(ad_pred_10*100.0, as.integer)),fontface = "bold") +
+      scale_fill_manual(values=cols)+
+      labs(x="APOE genotype", y="Allele score") + 
+      scale_x_discrete( labels=c(expression(paste(epsilon,"22")),expression(paste(epsilon,"32")),expression(paste(epsilon,"33")),expression(paste(epsilon,"42")),expression(paste(epsilon,"43")),expression(paste(epsilon,"44")))) + 
+      scale_y_discrete( labels=c("0-25%","25-50%","50-75%","75-100%")) + 
+      theme(axis.ticks = element_blank(), panel.background = element_blank(),legend.position = "none",      axis.title=element_text(size=12,face="bold")) +
+      theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(margin = margin(t = 10, r = 0 , b = 0, l = 0))) +
+      theme(axis.text=element_text(size=8,face="italic"), strip.background = element_blank()) +
+      facet_grid(age_gr ~ dm + smoker , labeller = labeller(age_gr = age_gr.labs, smoker = smoker.labs, dm = dm.labs)) +
+      theme(strip.text.x = element_text( size = 10, face = "bold"),
+            strip.text.y = element_text( size = 10, face = "bold")) +
+      ggtitle(titlename) +
+      coord_fixed()
+    
+    
+    plotname <- paste0("./Results/",cohortname,"_EADB2022_Riskplot_10y_ad_sex",i,"_edu",j,".pdf")
+    
+    ggsave(plotname,device="pdf",width=20,dpi=300,units="cm")
+    
+  }
+}
+
+# Vascular dementia risk charts
+
+vd_df <- vd_df %>% mutate(apoe_s = case_when(
+  apoe == "e22" ~ 1,
+  apoe == "e32" ~ 2,
+  apoe == "e33" ~ 3,
+  apoe == "e42" ~ 4,
+  apoe == "e43" ~ 5,
+  apoe == "e44" ~ 6)
+)
+
+vd_df$apoe_s<- as.factor(vd_df$apoe_s)
+
+vd_df <- vd_df %>% mutate(col = case_when(
+  vd_pred_10 < 0.01 ~ "0",
+  vd_pred_10 >= 0.01 & vd_pred_10 < 0.05 ~ "1",
+  vd_pred_10 >= 0.05 & vd_pred_10 < 0.10 ~ "2",
+  vd_pred_10 >= 0.10 & vd_pred_10 < 0.15 ~ "3",
+  vd_pred_10 >= 0.15 & vd_pred_10 < 0.20 ~ "4",
+  vd_pred_10 >= 0.20 & vd_pred_10 < 0.30 ~ "5",
+  vd_pred_10 >= 0.30 ~ "6")
+)
+
+# order age_gr for plot 
+summary(vd_df$age_gr)
+vd_df$age_gr <- factor(vd_df$age_gr, levels = c(4, 3, 2, 1,0))
+
+
+for (i in 0:1) {
+  for (j in 0:1) {
+    
+    pd_vd <- vd_df[sex==i & edu==j & age_gr != 0,]
+    
+    titlename <- paste0(cohortname," - vdcular dementia 10 year absolute risk - sex=" ,i, " edu=" ,j)
+    
+    ggplot(pd_vd,aes(x = apoe_s, y = was2022_gr, fill = col))  +
+      geom_tile() +
+      geom_text(aes(label = lapply(vd_pred_10*100.0, as.integer)),fontface = "bold") +
+      scale_fill_manual(values=cols)+
+      labs(x="APOE genotype", y="Allele score") + 
+      scale_x_discrete( labels=c(expression(paste(epsilon,"22")),expression(paste(epsilon,"32")),expression(paste(epsilon,"33")),expression(paste(epsilon,"42")),expression(paste(epsilon,"43")),expression(paste(epsilon,"44")))) + 
+      scale_y_discrete( labels=c("0-25%","25-50%","50-75%","75-100%")) + 
+      theme(axis.ticks = element_blank(), panel.background = element_blank(),legend.position = "none",      axis.title=element_text(size=12,face="bold")) +
+      theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(margin = margin(t = 10, r = 0 , b = 0, l = 0))) +
+      theme(axis.text=element_text(size=8,face="italic"), strip.background = element_blank()) +
+      facet_grid(age_gr ~ dm + smoker , labeller = labeller(age_gr = age_gr.labs, smoker = smoker.labs, dm = dm.labs)) +
+      theme(strip.text.x = element_text( size = 10, face = "bold"),
+            strip.text.y = element_text( size = 10, face = "bold")) +
+      ggtitle(titlename) +
+      coord_fixed()
+    
+    
+    plotname <- paste0("./Results/",cohortname,"_EADB2022_Riskplot_10y_vd_sex",i,"_edu",j,".pdf")
+    
+    ggsave(plotname,device="pdf",width=20,dpi=300,units="cm")
+    
+  }
+}
+
+# vdcular related disease risk charts
+
+
+vrd_df <- vrd_df %>% mutate(apoe_s = case_when(
+  apoe == "e22" ~ 1,
+  apoe == "e32" ~ 2,
+  apoe == "e33" ~ 3,
+  apoe == "e42" ~ 4,
+  apoe == "e43" ~ 5,
+  apoe == "e44" ~ 6)
+)
+
+vrd_df$apoe_s<- as.factor(vrd_df$apoe_s)
+
+vrd_df <- vrd_df %>% mutate(col = case_when(
+  vrd_pred_10 < 0.01 ~ "0",
+  vrd_pred_10 >= 0.01 & vrd_pred_10 < 0.05 ~ "1",
+  vrd_pred_10 >= 0.05 & vrd_pred_10 < 0.10 ~ "2",
+  vrd_pred_10 >= 0.10 & vrd_pred_10 < 0.15 ~ "3",
+  vrd_pred_10 >= 0.15 & vrd_pred_10 < 0.20 ~ "4",
+  vrd_pred_10 >= 0.20 & vrd_pred_10 < 0.30 ~ "5",
+  vrd_pred_10 >= 0.30 ~ "6")
+)
+
+# order age_gr for plot 
+summary(vrd_df$age_gr)
+vrd_df$age_gr <- factor(vrd_df$age_gr, levels = c(4, 3, 2, 1,0))
+
+
+for (i in 0:1) {
+  for (j in 0:1) {
+    
+    pd_vrd <- vrd_df[sex==i & edu==j & age_gr != 0,]
+    
+    titlename <- paste0(cohortname," - vdcular related dementia 10 year absolute risk - sex=" ,i, " edu=" ,j)
+    
+    ggplot(pd_vrd,aes(x = apoe_s, y = was2022_gr, fill = col))  +
+      geom_tile() +
+      geom_text(aes(label = lapply(vrd_pred_10*100.0, as.integer)),fontface = "bold") +
+      scale_fill_manual(values=cols)+
+      labs(x="APOE genotype", y="Allele score") + 
+      scale_x_discrete( labels=c(expression(paste(epsilon,"22")),expression(paste(epsilon,"32")),expression(paste(epsilon,"33")),expression(paste(epsilon,"42")),expression(paste(epsilon,"43")),expression(paste(epsilon,"44")))) + 
+      scale_y_discrete( labels=c("0-25%","25-50%","50-75%","75-100%")) + 
+      theme(axis.ticks = element_blank(), panel.background = element_blank(),legend.position = "none",      axis.title=element_text(size=12,face="bold")) +
+      theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+      theme(axis.title.x = element_text(margin = margin(t = 10, r = 0 , b = 0, l = 0))) +
+      theme(axis.text=element_text(size=8,face="italic"), strip.background = element_blank()) +
+      facet_grid(age_gr ~ dm + smoker , labeller = labeller(age_gr = age_gr.labs, smoker = smoker.labs, dm = dm.labs)) +
+      theme(strip.text.x = element_text( size = 10, face = "bold"),
+            strip.text.y = element_text( size = 10, face = "bold")) +
+      ggtitle(titlename) +
+      coord_fixed()
+    
+    
+    plotname <- paste0("./Results/",cohortname,"_EADB2022_Riskplot_10y_vrd_sex",i,"_edu",j,".pdf")
+    
+    ggsave(plotname,device="pdf",width=20,dpi=300,units="cm")
+    
+  }
+}
+
+
+## Generate 10 year risk-ratios
+#```{r generate risk ratios}
+# Women, no diabetes, never smoking, e33, 3rd allele_gr, age_gr 70-80, Normal education is selected as reference
+
+# AD
+ref_m <- filter(ad_df, sex==0 & dm==0 & smoker == 0 &  edu == 0 & apoe =="e33" & was2022_gr == 2 & age_gr == 3)
+ref <- as.double(ref_m$ad_pred_10)
+
+
+ad_df <-ad_df %>% mutate( ad_rr_10 = ad_pred_10 / ref)
+
+# VD
+ref_m <- filter(vd_df, sex==0 & dm==0 & smoker == 0 &  edu == 0 & apoe =="e33" & was2022_gr == 2 & age_gr == 3)
+ref <- as.double(ref_m$vd_pred_10)
+
+
+vd_df <-vd_df %>% mutate( vd_rr_10 = vd_pred_10 / ref)
+
+# VRD 
+ref_m <- filter(vrd_df, sex==0 & dm==0 & smoker == 0 &  edu == 0 & apoe =="e33" & was2022_gr == 2 & age_gr == 3)
+ref <- as.double(ref_m$vrd_pred_10)
+
+
+vrd_df <- vrd_df %>% mutate( vrd_rr_10 = vrd_pred_10 / ref)
+
+
 #> -----------------------------
 #> Anova test
 #> -----------------------------
