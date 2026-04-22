@@ -82,12 +82,11 @@ analysis_tbl = analysis_tbl %>%
   mutate(forest_plot = pmap(list(type, data_train), ~ 
                               plot_forest(..1, ..2)))
 }
-levels(df$prs_fac)
 #> -----------------------------
 #> DEFINE & FIT COX MODELS
 #> -----------------------------
-
-{analysis_tbl <- analysis_tbl %>%
+{
+  analysis_tbl <- analysis_tbl %>%
   mutate(
     data_train = map(data_train, ~ filter(.x, !is.na(sbp),
                               !is.na(dbp),
@@ -693,22 +692,22 @@ source("R/plot_lasso.R")
 
 lasso_vars <- c(
   "age_baseline", 
-  "prs_level", 
   "sex", 
+  "prs_level", 
   "gene_apoe_level", 
-  "alldm", 
-  "smok_ever", 
-  "ht", 
   "edu", 
+  "smok_ever", 
   "alc", 
+  "alldm", 
+  "ht", 
   "is_ih", 
   "ihd", 
   "dbp10", 
   "sbp10")
 
-lasso_selected <- list("AD" = c("age_baseline", "sex"),
-                     "VD" = c("age_baseline", "sex"),
-                     "VRD" = c("age_baseline", "sex"))
+lasso_selected <- list("AD" = c("gene_apoe_level", "prs_level", "age_baseline", "sex"),
+                     "VD" = c("gene_apoe_level", "prs_level", "age_baseline", "sex"),
+                     "VRD" = c("gene_apoe_level", "prs_level", "age_baseline", "sex"))
 
 analysis_tbl <- analysis_tbl %>%
   mutate(lasoo_plot = pmap(list(type, data_train), ~ {

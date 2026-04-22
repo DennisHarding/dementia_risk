@@ -158,7 +158,7 @@ format_df <- function(data = data){
         gene_apoe == "e24" ~ 4,
         gene_apoe == "e34" ~ 5,
         gene_apoe == "e44" ~ 6,
-        .default = NA_real_
+          .default = NA_real_
       ),
       death = !is.na(death_date)
     ) %>%
