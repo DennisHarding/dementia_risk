@@ -7,7 +7,7 @@ fgr_multi <- function(type, data){
                "VRD" = c("age_baseline", "gene_apoe", "edu", "alldm", "ihd", "ht") # 6 vars
     ), 
     
-    mid = list("AD" = c("age_baseline", "prs_level", "gene_apoe", "edu", "alldm", "ihs", "ht", "alc"), # 8 vars
+    mid = list("AD" = c("age_baseline", "prs_level", "gene_apoe", "edu", "alldm", "ihd", "ht", "alc"), # 8 vars
                "VD" = c("age_baseline", "sex", "prs_level", "gene_apoe", "edu", "alldm", "is_ih", "ihd", "ht"), # 9 vars
                "VRD" = c("age_baseline", "sex", "prs_level", "gene_apoe", "edu", "alldm", "is_ih", "ihd", "ht", "alc") # 10 vars
     ),
