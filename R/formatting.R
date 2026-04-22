@@ -161,7 +161,7 @@ format_df <- function(data = data){
         .default = NA_real_
       ),
       death = !is.na(death_date)
-      ) %>%
+    ) %>%
     
     # Restrict analysis population
     filter(

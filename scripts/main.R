@@ -691,19 +691,20 @@ analysis_tbl %>% pull(surv_curvs) %>% walk(print)
 {
 source("R/plot_lasso.R")
 
-lasso_vars <- c("age_baseline", 
-          "prs_level", 
-          "sex", 
-          "gene_apoe_level", 
-          "alldm", 
-          "smok_ever", 
-          "ht", 
-          "edu", 
-          "alc", 
-          "is_ih", 
-          "ihd", 
-          "dbp10", 
-          "sbp10")
+lasso_vars <- c(
+  "age_baseline", 
+  "prs_level", 
+  "sex", 
+  "gene_apoe_level", 
+  "alldm", 
+  "smok_ever", 
+  "ht", 
+  "edu", 
+  "alc", 
+  "is_ih", 
+  "ihd", 
+  "dbp10", 
+  "sbp10")
 
 lasso_selected <- list("AD" = c("age_baseline", "sex"),
                      "VD" = c("age_baseline", "sex"),
