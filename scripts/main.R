@@ -148,9 +148,6 @@ analysis_tbl %>%
 #> fgr run 
 #> -----------------------------
 
-cox_selected <- list("AD" = c("age_gr", "sex", "prs_fac", "gene_apoe", "edu"),
-                     "VD" = c("age_gr", "sex", "prs_fac", "gene_apoe", "alldm", "is_ih", "ihd", "ht"),
-                     "VRD" = c("age_gr", "sex", "prs_fac", "gene_apoe", "edu", "alldm", "ihd", "ht"))
 
 formula <- as.formula(paste0("Hist(futime, fail_cr) ~ ", paste0(cox_selected[["AD"]], collapse = " + ")))
 fit_fgr <- FGR(formula = formula, data = df_ad_train, cause = 1)
@@ -177,6 +174,27 @@ analysis_tbl <- analysis_tbl %>%
     )
   ))
 }
+#> -----------------------------
+#> FGR multi run 
+#> -----------------------------
+
+{
+  source("R/fgr_multi.R")
+  all_deps <- tools::package_dependencies("riskRegression", recursive = TRUE)$riskRegression
+  
+  plan(multisession, workers = 3)
+  
+  analysis_tbl <- analysis_tbl %>%
+    mutate(fgr_multi_fit = future_pmap(
+      list(type, data_train),
+      ~ fgr_multi(..1, ..2),
+      .options = furrr_options(
+        packages = c("Matrix", "riskRegression", all_deps, "rsample", "glue", "dplyr"),
+        seed = TRUE
+      )
+    ))
+}
+
 #> -----------------------------
 #> Risk Charts
 #> -----------------------------
