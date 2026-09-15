@@ -13,6 +13,10 @@ This repository contains the complete analysis codebase developed for a Master's
 - **Interactive Risk Charts**: Visualizations of risk stratified by age, sex, APOE genotype, and genetic risk scores
 - **Model Validation**: Comprehensive diagnostics including proportional hazards assumptions, model comparison, and feature selection
 
+### Disclaimer
+Due to the UK biobank shutdown in 23 april 2026 progress in the project was halted abruptly due to inability to access data. See the following message from UK Biobank officials:
+https://www.ukbiobank.ac.uk/news/a-message-to-our-participants-uk-biobank-data-security-update/
+
 ## Repository Structure
 
 ```
@@ -231,13 +235,13 @@ If using this code or results, please cite:
 
 ## Contact & Attribution
 
-- **Author**: Dennis Harding (Master's student)
+- **Author**: Dennis Harding
 - **Repository**: https://github.com/DennisHarding/dementia_risk
 - **Created**: March 2026
 
 ## License
 
-[Specify license - e.g., MIT, GPL-3.0, CC-BY]
+MIT-liscence
 
 ## References
 
