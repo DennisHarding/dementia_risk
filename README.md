@@ -18,24 +18,25 @@ This repository contains the complete analysis codebase developed for a Master's
 ```
 dementia_risk/
 ├── scripts/
-│   └── main.R                 # Main analysis pipeline
+│   ├── formatting_custom_data.R # Data preprocessing and formatting
+│   └── main.R                   # Main analysis pipeline
 ├── R/
-│   ├── formatting.R           # Data preprocessing and formatting
-│   ├── plot_forest.R          # Forest plot generation
-│   ├── plot_spline.R          # Spline visualization
-│   ├── plot_spline_dfs.R      # Multi-variable spline plots
-│   ├── plot_sfr.R             # Schoenfeld residual plots
-│   ├── plot_loglog.R          # Log-log survival plots
-│   ├── plot_lasso.R           # LASSO feature selection plots
-│   ├── fgr.R                  # Fine-Gray regression models
-│   └── fgr_multi.R            # Multi-variable FGR models
+│   ├── formatting.R             # Data preprocessing and formatting
+│   ├── plot_forest.R            # Forest plot generation
+│   ├── plot_spline.R            # Spline visualization
+│   ├── plot_spline_dfs.R        # Multi-variable spline plots
+│   ├── plot_sfr.R               # Schoenfeld residual plots
+│   ├── plot_loglog.R            # Log-log survival plots
+│   ├── plot_lasso.R             # LASSO feature selection plots
+│   ├── fgr.R                    # Fine-Gray regression models
+│   └── fgr_multi.R              # Multi-variable FGR models
 ├── data/
-│   └── custom_data_1.tsv      # UK Biobank extract (not included)
-├── Results/                   # Output risk charts and plots
-├── figures/                   # Additional figures for publication
-├── renv.lock                  # R environment lock file
-├── dementia_risk.Rproj        # R project file
-└── README.md                  # This file
+│   └── custom_data_1.tsv        # UK Biobank extract (not included)
+├── Results/                     # Output risk charts and plots
+├── figures/                     # Additional figures for publication
+├── renv.lock                    # R environment lock file
+├── dementia_risk.Rproj          # R project file
+└── README.md                    # This file
 ```
 
 ## Data
