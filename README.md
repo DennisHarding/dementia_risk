@@ -14,8 +14,7 @@ This repository contains the complete analysis codebase developed for a Master's
 - **Model Validation**: Comprehensive diagnostics including proportional hazards assumptions, model comparison, and feature selection
 
 ### Disclaimer
-Due to the UK biobank shutdown in 23 april 2026 progress in the project was halted abruptly due to inability to access data. See the following message from UK Biobank officials:
-https://www.ukbiobank.ac.uk/news/a-message-to-our-participants-uk-biobank-data-security-update/
+Due to the UK biobank shutdown in 23 april 2026 progress in the project was halted abruptly, see the report for more details about this disclaimer.
 
 ## Repository Structure
 
